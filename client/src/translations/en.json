@@ -1,0 +1,53 @@
+{
+  "welcome": "## Welcome to Pedro's Website Agent!\n### Hey there, I’m Indy 🤖\n\nI’m an AI digital assistant here to help you explore all things about Pedro’s professional life. Feel free to ask me about:\n- Curriculum & Skills 📚💡\n- Working Experience 🏢💼\n- Certificates & Credentials 📜🏅\n- Booking Appointments 🗓️✅\n\n---\n\nDisclaimer:\nWhile I strive to provide accurate responses, my answers may not be 100% correct. I’m continuously learning and improving to serve you better.\n\nEnjoy your visit, and let me know how I can help!",
+  "intro": {
+    "greeting": "Hello, I'm a developer",
+    "description": "I specialize in creating beautiful web experiences",
+    "cta": "Explore my work"
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "projects": "Projects",
+    "skills": "Skills",
+    "contact": "Contact"
+  },
+  "about": {
+    "title": "About Me",
+    "description": "I am a passionate developer with experience in building web applications. I love creating intuitive and user-friendly interfaces that provide great user experiences."
+  },
+  "projects": {
+    "title": "My Projects",
+    "viewProject": "View Project",
+    "technologies": "Technologies used"
+  },
+  "skills": {
+    "title": "My Skills",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "other": "Other Tools"
+  },
+  "contact": {
+    "title": "Contact Me",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "send": "Send Message",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message. Please try again."
+  },
+  "language": {
+    "select": "Select Language",
+    "detected": "Detected language: {{language}}"
+  },
+  "agent": {
+    "website": {
+      "title": "Website Portfolio Agent",
+      "clear": "Clear Conversation",
+      "export": "Export Conversation"
+    }
+  },
+  "error": {
+    "api": "Sorry, there was an error connecting to the service. Please try again later."
+  }
+} 

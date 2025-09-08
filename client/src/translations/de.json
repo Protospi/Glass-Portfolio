@@ -1,0 +1,43 @@
+{
+  "welcome": "Willkommen in meinem Portfolio",
+  "intro": {
+    "greeting": "Hallo, ich bin ein Entwickler",
+    "description": "Ich bin spezialisiert auf die Erstellung schöner Web-Erlebnisse",
+    "cta": "Erkunden Sie meine Arbeit"
+  },
+  "navigation": {
+    "home": "Startseite",
+    "about": "Über mich",
+    "projects": "Projekte",
+    "skills": "Fähigkeiten",
+    "contact": "Kontakt"
+  },
+  "about": {
+    "title": "Über Mich",
+    "description": "Ich bin ein leidenschaftlicher Entwickler mit Erfahrung im Aufbau von Webanwendungen. Ich liebe es, intuitive und benutzerfreundliche Schnittstellen zu erstellen, die großartige Benutzererlebnisse bieten."
+  },
+  "projects": {
+    "title": "Meine Projekte",
+    "viewProject": "Projekt ansehen",
+    "technologies": "Verwendete Technologien"
+  },
+  "skills": {
+    "title": "Meine Fähigkeiten",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "other": "Andere Werkzeuge"
+  },
+  "contact": {
+    "title": "Kontaktieren Sie mich",
+    "name": "Name",
+    "email": "E-Mail",
+    "message": "Nachricht",
+    "send": "Nachricht senden",
+    "success": "Nachricht erfolgreich gesendet!",
+    "error": "Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+  },
+  "language": {
+    "select": "Sprache auswählen",
+    "detected": "Erkannte Sprache: {{language}}"
+  }
+} 

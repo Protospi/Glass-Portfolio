@@ -1,0 +1,337 @@
+import OpenAI from "openai";
+import dotenv from "dotenv";
+dotenv.config();
+
+// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const PEDRO_BASE_PROMPT = `
+Perfect! I’ll update the prompt with emojis sprinkled in ✨, and adjust the **Persona** to explicitly state Pedro’s role as a **Data Scientist, Machine Learning & AI Engineer**. I’ll also encourage **Drope** to use emojis in its tone of voice to keep things professional but approachable.
+
+Here’s the upgraded version:
+
+---
+
+# **Prompt for Drope – Pedro’s Personal Work Assistant 🤖**
+
+## **Persona 🧑‍💻**
+
+You are **Drope**, a professional and helpful assistant that represents **Pedro Loes – Data Scientist, Machine Learning & AI Engineer**.
+You help people learn about Pedro’s:
+
+* 💼 Work history
+* 📂 Projects & portfolio
+* 📚 Learning path & education
+* 📜 Certificates
+* 🛠 Skills & fit for job descriptions
+* 📅 Schedule meetings with Pedro
+
+**Tone of voice:**
+
+* Always polite, professional, concise, and approachable.
+* Use **10–30 words** for small answers.
+* Use **20–40 words** for larger answers.
+* Feel free to add **emojis** in your responses to make them friendlier and more engaging 🎯.
+* Use markdown notation to emphasize important points, titles, break lines, build lists, etc for clean answers.
+
+---
+
+## **User Information 🧑‍💻**
+
+* Will be working on Pedro's professional website.
+* The typical user is a company needing consulting, a recruiter or a hiring manager trying to hire Pedro.
+
+---
+
+## **Tools 🔧**
+
+* Use the function get_portfolio_info when deeper details are needed.
+* Use the function get_work_history_info when deeper details are needed.
+* Use the function get_learning_path_info when deeper details are needed.
+* Use the function get_skills_info when deeper details are needed.
+* Use the function get_meetings_info when deeper details are needed.
+
+* Use the function get_schedule_availability when deeper details are needed.
+* Use the function book_meeting when deeper details are needed.
+
+---
+
+## **Situational Data ⏰**
+
+Always use this variable for date/time related answers:
+$dateTime
+
+---
+
+## **Knowledge Base 📖**
+
+This section holds external information retrieved with RAG:
+$information
+
+Use this **only** when the user asks a question that requires more details than the information in this prompt.
+
+---
+
+## **Conversation Instructions 💬**
+
+1. **Greeting 👋**
+
+   * If the user says hello, welcome them warmly.
+
+2. **Work History 💼**
+
+   * If asked, summarize Pedro’s professional journey:
+
+     * **2023–Present – SmartTalks.ai**: AI Engineer, built multiagent platforms, dashboards, RAG systems, mentored engineers.
+     * **2021–2022 – Guide 121**: Data Scientist, improved chatbot accuracy, pipelines, diagnostic apps.
+     * **2018–2020 – Banco Inter**: Data Analyst, automated reporting, built risk & cross-sell models.
+     * **2012–2017 – NetApp**: Technical Support Engineer, optimized WAN & storage.
+
+3. **Projects 🚀**
+
+   * If asked about Pedro’s portfolio, describe his **recent projects**:
+
+     * Workflow Orchestration Platform (low-code LLM orchestrator).
+     * Prompter (AI-powered prompt editor).
+     * Smart Content (RAG system for vector-embedded content).
+   * Use the function get_portfolio_info when deeper details are needed.
+
+4. **Learning Path & Education 🎓**
+
+   * If asked about Pedro’s learning:
+
+     * **B.Sc. Statistics – UFMG (2022)**
+     * **B.A. Philosophy – UFMG (2014)**
+     * **Certificates**: Data Eng. Professional (2025), DeepLearning.AI ML/AI certs, TOEFL Advanced English.
+
+5. **Skills ⚡**
+
+   * If asked about Pedro’s skills, highlight:
+
+     * **AI/ML**: LLM orchestration, RAG, NLP/NLU, Deep ML.
+     * **Data Eng.**: SQL/NoSQL, Spark, Airflow, Hadoop, AWS & GCP.
+     * **Software**: Python, R, C++, FastAPI, Flask, JS (Vue/React).
+     * **Analytics**: Tableau, Power BI, Plotly.
+
+6. **Meetings 📅**
+
+   * If asked to book a meeting, follow these steps:
+
+     1. Ask for **name** ✍️
+     2. Ask for **email** 📧
+     3. Ask for **subject** 🗂
+     4. Ask for **preferred date & time** ⏰
+     5. Show a **checkout summary** 📋
+     6. If user says “OK”, call:
+
+        * get_schedule_availability
+        * book_meeting
+     7. Confirm: “✅ Your meeting has been booked. A confirmation email has been sent.”
+
+7. **Closing 🙏**
+
+   * Always end by thanking the user and reminding them:
+     *“Thanks for the chat! I’m always here to help with Pedro’s professional journey 🚀.”*
+
+---
+
+## **Thinking 🧠**
+
+* Think before answering: plan clearly.
+* Persistence: Always support user questions about Pedro’s work.
+* Planning: Understand intent, provide clarity, and add value.
+
+---
+
+## **Guardrails 🚧**
+
+* Do **not** answer or discuss anything unrelated to Pedro’s **work, portfolio, skills, or meetings**.
+* If asked about unrelated topics, politely decline and redirect:
+  *“🙏 I can only help with Pedro’s professional career, projects, or scheduling.”*
+* Always remain professional and aligned with Pedro’s brand.
+
+---
+`;
+
+
+// Generate AI response using the OpenAI API
+export async function generateAIResponse(userMessage: string, conversationHistory: Array<{ content: string; isUser: boolean }> = []): Promise<string> {
+  try {
+    // Build conversation context from history
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: PEDRO_BASE_PROMPT }
+    ];
+
+    // Add conversation history (last 10 messages to keep context manageable)
+    const recentHistory = conversationHistory;
+    for (const msg of recentHistory) {
+      messages.push({
+        role: msg.isUser ? "user" : "assistant",
+        content: msg.content
+      });
+    }
+
+    // Add the current user message
+    messages.push({ role: "user", content: userMessage });
+
+    // Generate AI response
+    const response = await openai.responses.create({
+      model: "gpt-5", // Note: Using gpt-4 as gpt-4.1 might not be available yet
+      reasoning: { effort: "minimal" },
+      input: messages,
+    });
+    console.log(response);
+
+    return response.output_text || "I apologize, but I couldn't generate a response at the moment. Please try again.";
+  } catch (error) {
+    console.error("OpenAI API error:", error);
+    throw new Error("Failed to generate AI response");
+  }
+}
+
+// Function that uses OpenAI to detect language and translate custom.json
+export async function detectLanguageAndTranslate(userInput: string) {
+  try {
+    // Step 1: Detect the language
+    const languageDetection = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a language detection assistant. 
+          Analyze the text and determine what language it's written in. 
+          
+          IMPORTANT RULES:
+          1. Respond with the EXACT language name only, no additional text
+          2. Use these specific language names:
+             - English (for English)
+             - Spanish (for Spanish/Español)
+             - Portuguese (for Portuguese/Português)
+             - Chinese (for Chinese/中文/Mandarin/Cantonese)
+             - German (for German/Deutsch)
+             - French (for French/Français)
+             - Japanese (for Japanese/日本語)
+             - Italian (for Italian/Italiano)
+             - Russian (for Russian/Русский)
+             - Arabic (for Arabic/العربية)
+             - Korean (for Korean/한국어)
+             - Hindi (for Hindi/हिन्दी)
+          3. If you detect any other language, respond with the language name in English
+          4. If the language cannot be determined, respond with "English"`
+        },
+        {
+          role: "user",
+          content: userInput,
+        },
+      ],
+    });
+
+    let detectedLanguage = languageDetection.choices[0].message.content?.trim() || 'English';
+    
+    // Special handling for Chinese variants
+    if (detectedLanguage.toLowerCase().includes('chinese') || 
+        detectedLanguage.includes('中文') || 
+        detectedLanguage.toLowerCase().includes('mandarin') ||
+        detectedLanguage.toLowerCase().includes('cantonese')) {
+      detectedLanguage = 'Chinese';
+    }
+    
+    console.log('Raw language detection response:', languageDetection.choices[0].message.content);
+    console.log('Processed detected language:', detectedLanguage);
+    
+    // Additional check: if user input contains Chinese characters, force Chinese detection
+    const containsChinese = /[\u4e00-\u9fff]/.test(userInput);
+    if (containsChinese && detectedLanguage === 'English') {
+      detectedLanguage = 'Chinese';
+      console.log('Overriding to Chinese based on character detection');
+    }
+
+    // Step 2: Load the current custom.json content
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const customJsonPath = path.resolve(process.cwd(), 'client/src/translations/custom.json');
+    const customJsonContent = await fs.readFile(customJsonPath, 'utf8');
+    const customJson = JSON.parse(customJsonContent);
+
+    // Step 3: Translate the custom.json content to the detected language
+    const translationCompletion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a professional translator specializing in user interface translations. 
+          You will receive a JSON object with interface text in English and need to translate it to ${detectedLanguage}.
+          
+          CRITICAL TRANSLATION RULES:
+          1. Maintain the EXACT same JSON structure - all keys, arrays, and nesting must be identical
+          2. Only translate the VALUES (text content), NEVER translate the KEYS
+          3. Keep proper nouns unchanged: "Pedro", "Drope" 
+          4. Translate ALL text values to ${detectedLanguage}, including:
+             - Titles and subtitles
+             - Button text
+             - Sample questions
+             - Error messages
+          5. For ${detectedLanguage}:
+             ${detectedLanguage === 'Chinese' ? '- Use Simplified Chinese characters (简体中文)' : ''}
+             ${detectedLanguage === 'Arabic' ? '- Use Modern Standard Arabic' : ''}
+             ${detectedLanguage === 'Japanese' ? '- Use appropriate mix of Hiragana, Katakana, and Kanji' : ''}
+          6. Ensure translations are natural, professional, and appropriate for an AI assistant interface
+          7. Return ONLY the translated JSON object, no explanations or additional text
+          8. If the target language is English, return the original JSON unchanged
+          
+          Example structure preservation:
+          Input: {"chat": {"title": "Hello"}}
+          Output: {"chat": {"title": "[TRANSLATED_HELLO]"}}`
+        },
+        {
+          role: "user",
+          content: `Translate this JSON interface to ${detectedLanguage}:\n\n${JSON.stringify(customJson, null, 2)}`
+        },
+      ],
+    });
+
+    const translatedContent = translationCompletion.choices[0].message.content?.trim();
+    
+    if (!translatedContent) {
+      throw new Error('No translation received from OpenAI');
+    }
+
+    // Step 4: Parse the translated JSON and update the custom.json file
+    let translatedJson;
+    try {
+      translatedJson = JSON.parse(translatedContent);
+    } catch (parseError) {
+      console.error('Failed to parse translated JSON:', parseError);
+      console.error('Raw translation response:', translatedContent);
+      throw new Error('Invalid JSON received from translation');
+    }
+
+    // Step 5: Write the translated content back to custom.json
+    await fs.writeFile(customJsonPath, JSON.stringify(translatedJson, null, 2), 'utf8');
+    console.log('Successfully updated custom.json with translations for:', detectedLanguage);
+    console.log('Sample translated content:', JSON.stringify(translatedJson.chat?.title || 'N/A'));
+
+    return {
+      language: detectedLanguage,
+      translatedContent: translatedJson,
+      rawResponse: languageDetection.choices[0].message,
+    };
+  } catch (error) {
+    console.error('Language detection and translation error:', error);
+    throw new Error('Failed to detect language and translate content');
+  }
+}
+
+// Keep the original function for backward compatibility
+export async function detectLanguage(userInput: string) {
+  try {
+    const result = await detectLanguageAndTranslate(userInput);
+    return {
+      language: result.language,
+      rawResponse: result.rawResponse,
+    };
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    throw new Error('Failed to detect language');
+  }
+}

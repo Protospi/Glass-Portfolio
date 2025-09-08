@@ -1,0 +1,53 @@
+{
+  "welcome": "Bem-vindo ao meu portfólio",
+  "intro": {
+    "greeting": "Olá, sou um desenvolvedor",
+    "description": "Especializo-me em criar belas experiências web",
+    "cta": "Explore meu trabalho"
+  },
+  "navigation": {
+    "home": "Início",
+    "about": "Sobre",
+    "projects": "Projetos",
+    "skills": "Habilidades",
+    "contact": "Contato"
+  },
+  "about": {
+    "title": "Sobre Mim",
+    "description": "Sou um desenvolvedor apaixonado com experiência na construção de aplicações web. Adoro criar interfaces intuitivas e amigáveis que proporcionam ótimas experiências ao usuário."
+  },
+  "projects": {
+    "title": "Meus Projetos",
+    "viewProject": "Ver Projeto",
+    "technologies": "Tecnologias utilizadas"
+  },
+  "skills": {
+    "title": "Minhas Habilidades",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "other": "Outras Ferramentas"
+  },
+  "contact": {
+    "title": "Entre em Contato",
+    "name": "Nome",
+    "email": "Email",
+    "message": "Mensagem",
+    "send": "Enviar Mensagem",
+    "success": "Mensagem enviada com sucesso!",
+    "error": "Falha ao enviar mensagem. Por favor, tente novamente."
+  },
+  "language": {
+    "select": "Selecionar Idioma",
+    "detected": "Idioma detectado: {{language}}"
+  },
+  "agent": {
+    "website": {
+      "title": "Agente de Portfólio Web",
+      "clear": "Limpar Conversa",
+      "export": "Exportar Conversa"
+    }
+  },
+  "error": {
+    "api": "Desculpe, houve um erro ao conectar com o serviço. Por favor, tente novamente mais tarde."
+  }
+} 

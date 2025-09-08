@@ -1,0 +1,43 @@
+{
+  "welcome": "こんにちは、私のポートフォリオです",
+  "intro": {
+    "greeting": "こんにちは、私は開発者です",
+    "description": "美しいウェブ体験の作成を専門としています",
+    "cta": "私の作品を見る"
+  },
+  "navigation": {
+    "home": "ホーム",
+    "about": "自己紹介",
+    "projects": "プロジェクト",
+    "skills": "スキル",
+    "contact": "お問い合わせ"
+  },
+  "about": {
+    "title": "自己紹介",
+    "description": "私はウェブアプリケーションの構築経験を持つ情熱的な開発者です。直感的でユーザーフレンドリーなインターフェースを作成し、優れたユーザー体験を提供することが大好きです。"
+  },
+  "projects": {
+    "title": "プロジェクト",
+    "viewProject": "プロジェクトを見る",
+    "technologies": "使用技術"
+  },
+  "skills": {
+    "title": "スキル",
+    "frontend": "フロントエンド",
+    "backend": "バックエンド",
+    "other": "その他のツール"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "name": "お名前",
+    "email": "メールアドレス",
+    "message": "メッセージ",
+    "send": "送信",
+    "success": "メッセージが送信されました！",
+    "error": "メッセージの送信に失敗しました。もう一度お試しください。"
+  },
+  "language": {
+    "select": "言語を選択",
+    "detected": "検出された言語：{{language}}"
+  }
+} 
