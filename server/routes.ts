@@ -3,9 +3,96 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
-import { generateAIResponse, detectLanguage, detectLanguageAndTranslate } from "./openai";
+import { generateAIResponse, detectLanguage, detectLanguageAndTranslate, transcribeAudio } from "./openai";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Configure multer for audio file uploads
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: 'uploads/',
+      filename: (req, file, cb) => {
+        // Ensure proper file extension for webm files
+        const ext = file.mimetype === 'audio/webm' ? '.webm' : path.extname(file.originalname) || '.webm';
+        cb(null, Date.now() + ext);
+      }
+    }),
+    limits: {
+      fileSize: 25 * 1024 * 1024, // 25MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept audio files
+      if (file.mimetype.startsWith('audio/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only audio files are allowed'));
+      }
+    }
+  });
+
+  // Audio transcription endpoint
+  app.post("/api/transcribe", upload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No audio file provided" });
+      }
+
+      console.log('File received:', {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      });
+
+      // Check if file exists
+      if (!fs.existsSync(req.file.path)) {
+        console.error('File does not exist at path:', req.file.path);
+        return res.status(400).json({ error: "Audio file not found" });
+      }
+
+      // Transcribe the audio file
+      const transcribedText = await transcribeAudio(req.file.path);
+      
+      // Clean up the temporary file
+      fs.unlinkSync(req.file.path);
+      
+      // Get conversation history for context
+      const messages = await storage.getMessages();
+      
+      // Save the transcribed message as user input
+      const userMessage = await storage.createMessage({
+        content: transcribedText,
+        isUser: true,
+      });
+      
+      // Generate AI response using Pedro's persona
+      const aiResponse = await generateAIResponse(transcribedText, messages);
+      
+      // Save the AI response as a message
+      const responseMessage = await storage.createMessage({
+        content: aiResponse,
+        isUser: false,
+      });
+      
+      res.json({
+        transcribedText,
+        userMessage,
+        aiResponse: responseMessage
+      });
+    } catch (error) {
+      // Clean up the temporary file in case of error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      console.error("Audio transcription error:", error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
+    }
+  });
 
   // Detect language and translate interface
   app.post("/api/language-detection", async (req, res) => {

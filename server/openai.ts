@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import fs from "fs";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -319,6 +320,23 @@ export async function detectLanguageAndTranslate(userInput: string) {
   } catch (error) {
     console.error('Language detection and translation error:', error);
     throw new Error('Failed to detect language and translate content');
+  }
+}
+
+// Audio transcription function
+export async function transcribeAudio(audioFilePath: string): Promise<string> {
+  try {
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(audioFilePath),
+      model: "whisper-1", // Using whisper-1 as it's the standard transcription model
+      response_format: "text",
+    });
+
+    console.log('Audio transcription completed:', transcription);
+    return transcription;
+  } catch (error) {
+    console.error('OpenAI transcription error:', error);
+    throw new Error('Failed to transcribe audio');
   }
 }
 

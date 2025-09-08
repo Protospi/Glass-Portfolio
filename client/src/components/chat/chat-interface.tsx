@@ -184,6 +184,20 @@ export function ChatInterface() {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Listen for audio transcription completion
+  useEffect(() => {
+    const handleAudioTranscription = () => {
+      // Refresh messages when audio transcription is complete
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+    };
+
+    window.addEventListener('audioTranscriptionComplete', handleAudioTranscription);
+    
+    return () => {
+      window.removeEventListener('audioTranscriptionComplete', handleAudioTranscription);
+    };
+  }, [queryClient]);
+
   return (
     <div className="h-screen flex flex-col bg-gradient-dark relative">
       {/* New Conversation Button - Top Left Corner */}
