@@ -154,13 +154,48 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
     }
   };
 
-  const handleMicClick = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
+  const handleMicPress = () => {
+    if (!isRecording && !isTranscribing) {
       startRecording();
     }
   };
+
+  const handleMicRelease = () => {
+    if (isRecording) {
+      stopRecording();
+    }
+  };
+
+  // Handle keyboard shortcuts for recording
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if the textarea is not focused
+      if (document.activeElement !== textareaRef.current) {
+        if (e.code === 'Space' && !e.repeat && !isRecording && !isTranscribing) {
+          e.preventDefault();
+          handleMicPress();
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && isRecording) {
+        e.preventDefault();
+        handleMicRelease();
+      }
+      if (e.code === 'Escape' && isRecording) {
+        handleMicRelease();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isRecording, isTranscribing]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -215,21 +250,32 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"
-                  onClick={handleMicClick}
+                  onMouseDown={handleMicPress}
+                  onMouseUp={handleMicRelease}
+                  onMouseLeave={handleMicRelease}
+                  onTouchStart={handleMicPress}
+                  onTouchEnd={handleMicRelease}
                   disabled={isLoading || isTranscribing}
-                  className={`hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl ${
-                    isRecording ? 'bg-red-500/20' : ''
+                  className={`transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl ${
+                    isRecording ? 'bg-red-500/20 hover:bg-red-500/30' : 'hover:bg-red-500/20'
                   }`}
+                  title="Hold to record audio (or hold Spacebar)"
                   data-testid="button-mic"
                 >
                   {isTranscribing ? (
-                    <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" style={{width: '20px', height: '20px'}} />
                   ) : isRecording ? (
-                    <Square className="w-5 h-5 text-red-400 group-hover:text-red-300 transition-colors" />
+                    <Square className="w-6 h-6 text-red-400 group-hover:text-red-300 transition-colors" style={{width: '20px', height: '20px'}} />
                   ) : (
-                    <Mic className="w-5 h-5 text-muted-foreground group-hover:text-blue-400 transition-colors" />
+                    <Mic className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:text-red-400 group-hover:scale-110 transition" style={{width: '18px', height: '18px'}} />
                   )}
                 </Button>
+                {/* Recording hint */}
+                {isRecording && (
+                  <span className="text-xs text-red-400 ml-2 animate-pulse">
+                    Recording... Release to send
+                  </span>
+                )}
               </div>
               
               <Button
@@ -238,7 +284,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
                 className="hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl"
                 data-testid="button-send"
               >
-                <ArrowUp className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:scale-110 transition-transform" style={{width: '20px', height: '20px'}} />
+                <ArrowUp className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:scale-110 transition" style={{width: '21px', height: '21px'}} />
               </Button>
             </div>
           </form>

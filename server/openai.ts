@@ -176,14 +176,13 @@ export async function generateAIResponse(userMessage: string, conversationHistor
     messages.push({ role: "user", content: userMessage });
 
     // Generate AI response
-    const response = await openai.responses.create({
-      model: "gpt-5", // Note: Using gpt-4 as gpt-4.1 might not be available yet
-      reasoning: { effort: "minimal" },
-      input: messages,
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // Using gpt-4o as it's available
+      messages: messages,
     });
     console.log(response);
 
-    return response.output_text || "I apologize, but I couldn't generate a response at the moment. Please try again.";
+    return response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response at the moment. Please try again.";
   } catch (error) {
     console.error("OpenAI API error:", error);
     throw new Error("Failed to generate AI response");

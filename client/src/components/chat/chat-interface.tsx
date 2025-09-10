@@ -62,15 +62,15 @@ function WelcomeScreen({ onInsertText }: { onInsertText: (text: string) => void 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-8 pt-16">
       <div className="text-center">
-        <h1 className="text-3xl font-light text-foreground mb-8">
+        <h1 className="text-2xl font-light text-foreground mb-6 md:mb-7 lg:mb-10">
           {t('chat.title')}
         </h1>
-        <h2 className="text-lg font-normal text-muted-foreground mb-12">
+        <h2 className="text-lg font-normal text-muted-foreground mb-7 md:mb-8 lg:mb-10">
           {t('chat.subtitle')}
         </h2>
 
         {/* Suggestion Chips */}
-        <div className="flex justify-center flex-wrap gap-2 sm:gap-4 mb-16">
+        <div className="flex justify-center flex-wrap gap-2 sm:gap-4 mb-7 md:mb-8 lg:mb-10">
           {suggestionChips.map((chip, index) => {
             const IconComponent = chip.icon;
             return (

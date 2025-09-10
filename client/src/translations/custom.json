@@ -1,9 +1,9 @@
 {
   "chat": {
-    "title": "Olá, eu sou Drope. O assistente de IA do Pedro.",
+    "title": "Olá, sou a assistente digital do Pedro!",
     "subtitle": "Como posso ajudá-lo hoje?",
     "sampleQuestions": [
-      "Conte-me sobre a experiência profissional do Pedro.",
+      "Fale-me sobre a experiência profissional do Pedro.",
       "Mostre-me os projetos recentes do Pedro.",
       "Quais certificações o Pedro possui?",
       "Habilidades relacionadas à descrição do trabalho",
@@ -12,11 +12,11 @@
     "suggestionChips": [
       {
         "text": "Trabalho",
-        "query": "Conte-me sobre a experiência profissional do Pedro."
+        "query": "Fale-me sobre a experiência profissional do Pedro."
       },
       {
         "text": "Projetos",
-        "query": "Descubra os projetos recentes do Pedro."
+        "query": "Saiba mais sobre os projetos recentes do Pedro."
       },
       {
         "text": "Certificações",
@@ -24,7 +24,7 @@
       },
       {
         "text": "Habilidades",
-        "query": "Esta habilidade está relacionada à descrição do trabalho?"
+        "query": "Essa habilidade está relacionada à descrição do trabalho?"
       },
       {
         "text": "Reunião",
@@ -37,9 +37,9 @@
     "detected": "Idioma detectado: {{language}}"
   },
   "error": {
-    "api": "Desculpe, houve um erro ao conectar ao serviço. Por favor, tente novamente mais tarde."
+    "api": "Desculpe, ocorreu um erro ao conectar ao serviço. Por favor, tente novamente mais tarde."
   },
   "input": {
-    "placeholder": "Digite suas informações aqui..."
+    "placeholder": "Digite sua mensagem aqui..."
   }
 }
