@@ -1,0 +1,27 @@
+[
+    {
+      "type": "function",
+      "name": "get_portfolio_info",
+      "description": "Busca informações sobre o portfolio de projetos de Pedro Loes.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "portfolio": {
+            "type": "string",
+            "enum": [
+              "project 1",
+              "project 2",
+              "project 3"
+            ],
+            "description": "Projeto do portfolio que o usuário deseja saber mais informações."
+          }
+        },
+        "required": [
+          "portfolio"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+  
