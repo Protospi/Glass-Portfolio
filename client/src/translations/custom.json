@@ -1,45 +1,45 @@
 {
   "chat": {
-    "title": "Olá, sou a assistente digital do Pedro!",
-    "subtitle": "Como posso ajudá-lo hoje?",
+    "title": "¡Hola, soy la asistente digital de Pedro!",
+    "subtitle": "¿Cómo puedo ayudarte hoy?",
     "sampleQuestions": [
-      "Fale-me sobre a experiência profissional do Pedro.",
-      "Mostre-me os projetos recentes do Pedro.",
-      "Quais certificações o Pedro possui?",
-      "Habilidades relacionadas à descrição do trabalho",
-      "Você gostaria de agendar uma reunião com o Pedro?"
+      "Háblame sobre la experiencia profesional de Pedro.",
+      "Muéstrame los proyectos recientes de Pedro.",
+      "¿Qué certificaciones tiene Pedro?",
+      "Habilidades relacionadas con la descripción del trabajo",
+      "¿Te gustaría agendar una reunión con Pedro?"
     ],
     "suggestionChips": [
       {
-        "text": "Trabalho",
-        "query": "Fale-me sobre a experiência profissional do Pedro."
+        "text": "Trabajo",
+        "query": "Háblame sobre la experiencia profesional de Pedro."
       },
       {
-        "text": "Projetos",
-        "query": "Saiba mais sobre os projetos recentes do Pedro."
+        "text": "Proyectos",
+        "query": "Conoce más sobre los proyectos recientes de Pedro."
       },
       {
-        "text": "Certificações",
-        "query": "Quais certificações o Pedro possui?"
+        "text": "Certificaciones",
+        "query": "¿Qué certificaciones tiene Pedro?"
       },
       {
         "text": "Habilidades",
-        "query": "Essa habilidade está relacionada à descrição do trabalho?"
+        "query": "¿Esta habilidad está relacionada con la descripción del trabajo?"
       },
       {
-        "text": "Reunião",
-        "query": "Você gostaria de agendar uma reunião com o Pedro?"
+        "text": "Reunión",
+        "query": "¿Te gustaría agendar una reunión con Pedro?"
       }
     ]
   },
   "language": {
-    "select": "Selecionar idioma",
+    "select": "Seleccionar idioma",
     "detected": "Idioma detectado: {{language}}"
   },
   "error": {
-    "api": "Desculpe, ocorreu um erro ao conectar ao serviço. Por favor, tente novamente mais tarde."
+    "api": "Lo siento, ocurrió un error al conectar con el servicio. Por favor, inténtalo de nuevo más tarde."
   },
   "input": {
-    "placeholder": "Digite sua mensagem aqui..."
+    "placeholder": "Escribe tu mensaje aquí..."
   }
 }

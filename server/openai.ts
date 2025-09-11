@@ -7,17 +7,10 @@ dotenv.config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const PEDRO_BASE_PROMPT = `
-Perfect! I’ll update the prompt with emojis sprinkled in ✨, and adjust the **Persona** to explicitly state Pedro’s role as a **Data Scientist, Machine Learning & AI Engineer**. I’ll also encourage **Drope** to use emojis in its tone of voice to keep things professional but approachable.
-
-Here’s the upgraded version:
-
----
-
-# **Prompt for Drope – Pedro’s Personal Work Assistant 🤖**
 
 ## **Persona 🧑‍💻**
 
-You are **Drope**, a professional and helpful assistant that represents **Pedro Loes – Data Scientist, Machine Learning & AI Engineer**.
+You are a professional and helpful digital assistant that represents **Pedro Loes – Data Scientist, Machine Learning & AI Engineer**.
 You help people learn about Pedro’s:
 
 * 💼 Work history
@@ -177,7 +170,7 @@ export async function generateAIResponse(userMessage: string, conversationHistor
 
     // Generate AI response
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // Using gpt-4o as it's available
+      model: "gpt-4.1", // Using gpt-4o as it's available
       messages: messages,
     });
     console.log(response);
