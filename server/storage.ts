@@ -39,9 +39,14 @@ export class MemStorage implements IStorage {
   }
 
   async getMessages(): Promise<Message[]> {
-    return Array.from(this.messages.values()).sort(
+    const messages = Array.from(this.messages.values()).sort(
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
+    console.log('📦 Storage - Total messages:', messages.length);
+    messages.forEach((msg, i) => {
+      console.log(`  ${i + 1}. [${msg.timestamp.toISOString()}] ${msg.isUser ? 'User' : 'Assistant'}: ${msg.content.substring(0, 50)}...`);
+    });
+    return messages;
   }
 
   async createMessage(insertMessage: InsertMessage): Promise<Message> {
@@ -50,8 +55,16 @@ export class MemStorage implements IStorage {
       ...insertMessage,
       id,
       timestamp: new Date(),
+      isUser: insertMessage.isUser ?? false,
+      userId: insertMessage.userId ?? null,
     };
     this.messages.set(id, message);
+    console.log('💾 Storage - Created message:', {
+      id,
+      isUser: message.isUser,
+      content: message.content.substring(0, 50) + '...',
+      totalMessages: this.messages.size
+    });
     return message;
   }
 

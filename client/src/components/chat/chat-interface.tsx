@@ -62,10 +62,7 @@ function WelcomeScreen({ onInsertText }: { onInsertText: (text: string) => void 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-8 pt-16">
       <div className="text-center">
-        <h1 className="text-2xl font-light text-foreground mb-6 md:mb-7 lg:mb-10">
-          {t('chat.title')}
-        </h1>
-        <h2 className="text-lg font-normal text-muted-foreground mb-7 md:mb-8 lg:mb-10">
+        <h2 className="text-lg font-normal text-slate-600 dark:text-muted-foreground mb-7 md:mb-8 lg:mb-10">
           {t('chat.subtitle')}
         </h2>
 
@@ -81,8 +78,8 @@ function WelcomeScreen({ onInsertText }: { onInsertText: (text: string) => void 
                 className="glass-chip px-2 sm:px-4 py-2 rounded-xl hover:bg-blue-500/20 transition-all duration-200 group border-0 bg-transparent flex items-center space-x-0 sm:space-x-2"
                 data-testid={`chip-${chip.text.toLowerCase()}`}
               >
-                <IconComponent className="w-4 h-4 text-muted-foreground group-hover:text-blue-400 transition-colors" />
-                <span className="hidden sm:inline-block text-sm text-muted-foreground group-hover:text-blue-400 transition-colors ml-2">
+                <IconComponent className="w-4 h-4 text-slate-600 dark:text-muted-foreground group-hover:text-blue-400 transition-colors" />
+                <span className="hidden sm:inline-block text-sm text-slate-600 dark:text-muted-foreground group-hover:text-blue-400 transition-colors ml-2">
                   {chip.text}
                 </span>
               </Button>
@@ -96,7 +93,7 @@ function WelcomeScreen({ onInsertText }: { onInsertText: (text: string) => void 
             <button
               key={index}
               onClick={() => onInsertText(question)}
-              className="block w-full text-center px-4 py-3 text-muted-foreground/70 hover:text-foreground transition-colors text-sm rounded-lg hover:bg-white/5"
+              className="block w-full text-center px-4 py-3 text-slate-600 dark:text-muted-foreground hover:text-foreground transition-colors text-sm rounded-lg hover:bg-white/5"
               data-testid={`button-sample-question-${index}`}
             >
               {question}
@@ -163,6 +160,10 @@ export function ChatInterface() {
 
   const handleSendMessage = (content: string) => {
     sendMessageMutation.mutate(content);
+    // Focus the input after sending message
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
   };
 
   const handleNewConversation = async () => {
@@ -198,10 +199,13 @@ export function ChatInterface() {
     };
   }, [queryClient]);
 
+  const { t } = useTranslation();
+
   return (
     <div className="h-screen flex flex-col bg-gradient-dark relative">
-      {/* New Conversation Button - Top Left Corner */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Header Row with New Conversation Button, Title, and Theme Toggle */}
+      <header className="flex items-center justify-between p-4 z-10">
+        {/* New Conversation Button - Left */}
         <Button
           variant="ghost"
           size="icon"
@@ -209,15 +213,21 @@ export function ChatInterface() {
           className="glass-chip hover:bg-blue-500/20 transition-all duration-200 group border-0 bg-transparent"
           data-testid="button-new-conversation"
         >
-          <Plus className="h-5 w-5 text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition-all" />
+          <Plus className="h-5 w-5 text-slate-600 dark:text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition-all" />
           <span className="sr-only">New conversation</span>
         </Button>
-      </div>
 
-      {/* Theme Toggle - Top Right Corner */}
-      <div className="absolute top-4 right-4 z-10">
+        {/* Title - Center */}
+        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+          <span className="material-symbols-outlined" style={{ paddingRight: '4px' }}>
+            accessibility_new
+          </span>
+          {t('chat.title')}
+        </h1>
+
+        {/* Theme Toggle - Right */}
         <ThemeToggle />
-      </div>
+      </header>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative overflow-hidden">
@@ -229,7 +239,7 @@ export function ChatInterface() {
         ) : (
           /* Chat Messages */
           <div
-            className="flex-1 p-6 pt-20 overflow-y-auto scroll-smooth hide-scrollbar pb-48"
+            className="flex-1 p-6 pt-6 overflow-y-auto scroll-smooth hide-scrollbar pb-48"
             data-testid="messages-container"
           >
             {isLoading ? (

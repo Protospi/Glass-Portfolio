@@ -22,6 +22,132 @@
         ],
         "additionalProperties": false
       }
+    },
+    {
+      "type": "function",
+      "name": "schedule_meeting",
+      "description": "Agenda uma reunião no Google Calendar com título, horário, participantes e link do Google Meet. Ativar após o usuário fornecer os detalhes da reunião, dia e hora desejada.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Título da reunião"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição detalhada da reunião (opcional)"
+          },
+          "startDateTime": {
+            "type": "string",
+            "description": "Data e hora de início no formato ISO 8601 (ex: 2025-09-21T14:00:00-03:00)"
+          },
+          "endDateTime": {
+            "type": "string",
+            "description": "Data e hora de fim no formato ISO 8601 (ex: 2025-09-21T15:00:00-03:00)"
+          },
+          "attendeeEmails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Lista de emails dos participantes (opcional)"
+          }
+        },
+        "required": [
+          "title",
+          "startDateTime",
+          "endDateTime",
+          "attendeeEmails"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "get_upcoming_events",
+      "description": "Busca os próximos eventos do Google Calendar.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "maxResults": {
+            "type": "number",
+            "description": "Número máximo de eventos para retornar (padrão: 10)"
+          },
+          "timeMin": {
+            "type": "string",
+            "description": "Data mínima no formato ISO 8601 (opcional, padrão: agora)"
+          },
+          "timeMax": {
+            "type": "string",
+            "description": "Data máxima no formato ISO 8601 (opcional)"
+          }
+        },
+        "required": [
+          "maxResults",
+          "timeMin",
+          "timeMax"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "find_available_slots",
+      "description": "Encontra horários disponíveis na agenda para agendar reuniões. Ativar após o usuário fornecer os detalhes da reunião, dia e hora desejada.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Data no formato YYYY-MM-DD"
+          },
+          "duration": {
+            "type": "number",
+            "description": "Duração da reunião em minutos"
+          },
+          "workingHoursStart": {
+            "type": "string",
+            "description": "Hora de início do expediente no formato HH:MM (padrão: 09:00)"
+          },
+          "workingHoursEnd": {
+            "type": "string",
+            "description": "Hora de fim do expediente no formato HH:MM (padrão: 18:00)"
+          }
+        },
+        "required": [
+          "date",
+          "duration",
+          "workingHoursStart",
+          "workingHoursEnd"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "type": "function",
+      "name": "cancel_meeting",
+      "description": "Cancela uma reunião do Google Calendar usando o ID do evento.",
+      "strict": true,
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "description": "ID do evento a ser cancelado"
+          },
+          "sendUpdates": {
+            "type": "boolean",
+            "description": "Se deve enviar notificações de cancelamento aos participantes (padrão: true)"
+          }
+        },
+        "required": [
+          "eventId",
+          "sendUpdates"
+        ],
+        "additionalProperties": false
+      }
     }
   ]
   

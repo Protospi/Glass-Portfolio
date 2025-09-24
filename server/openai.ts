@@ -173,7 +173,7 @@ export async function generateAIResponse(userMessage: string, conversationHistor
       model: "gpt-4.1", // Using gpt-4o as it's available
       messages: messages,
     });
-    console.log(response);
+    // console.log(response);
 
     return response.choices[0]?.message?.content || "I apologize, but I couldn't generate a response at the moment. Please try again.";
   } catch (error) {
@@ -316,12 +316,12 @@ export async function detectLanguageAndTranslate(userInput: string) {
 }
 
 // Audio transcription function
-export async function transcribeAudio(audioFilePath: string): Promise<string> {
+export async function transcribeAudio(audioFilePath: string): Promise<{ text: string; usage?: any }> {
   try {
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(audioFilePath),
       model: "whisper-1", // Using whisper-1 as it's the standard transcription model
-      response_format: "text",
+      response_format: "json", // Changed to json to get the structured response
     });
 
     console.log('Audio transcription completed:', transcription);

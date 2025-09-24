@@ -1,4 +1,4 @@
-import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from "react";
+import { useState, useRef, useImperativeHandle, forwardRef, useEffect, useCallback } from "react";
 import { ArrowUp, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,20 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
       }
     }
   }));
+
+  const focusInput = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
+  // Watch for isLoading changes to focus input after assistant response
+  useEffect(() => {
+    if (!isLoading) {
+      // Small delay to ensure the UI has updated
+      setTimeout(focusInput, 100);
+    }
+  }, [isLoading, focusInput]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,36 +180,20 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
     }
   };
 
-  // Handle keyboard shortcuts for recording
+  // Handle Escape key to cancel recording if in progress
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if the textarea is not focused
-      if (document.activeElement !== textareaRef.current) {
-        if (e.code === 'Space' && !e.repeat && !isRecording && !isTranscribing) {
-          e.preventDefault();
-          handleMicPress();
-        }
-      }
-    };
-
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && isRecording) {
-        e.preventDefault();
-        handleMicRelease();
-      }
       if (e.code === 'Escape' && isRecording) {
         handleMicRelease();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isRecording, isTranscribing]);
+  }, [isRecording]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -222,12 +220,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
                   placeholder={t('input.placeholder')}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
+                  onKeyDown={handleKeyDown}
                   className="w-full min-h-[50px] max-h-[200px] resize-none border-0 bg-transparent px-4 py-3 focus:outline-none focus:ring-0 text-foreground placeholder:text-muted-foreground text-base leading-relaxed"
                   disabled={isLoading}
                   data-testid="input-message"
@@ -259,7 +252,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
                   className={`transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl ${
                     isRecording ? 'bg-red-500/20 hover:bg-red-500/30' : 'hover:bg-red-500/20'
                   }`}
-                  title="Hold to record audio (or hold Spacebar)"
+                  title="Hold to record audio"
                   data-testid="button-mic"
                 >
                   {isTranscribing ? (
