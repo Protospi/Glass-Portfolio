@@ -1,25 +1,135 @@
 import { google } from 'googleapis';
 import { JWT } from 'google-auth-library';
+import { OAuth2Client } from 'google-auth-library';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '../.env' });
 
 export class GoogleCalendarService {
   private calendar: any;
-  private auth: JWT;
+  private auth: JWT | OAuth2Client;
+  private useOAuth: boolean;
 
-  constructor() {
-    // Initialize the JWT auth with service account credentials
-    this.auth = new JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      scopes: [
-        'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/calendar.events'
-      ]
-    });
+  constructor(useOAuth: boolean = true) {
+    this.useOAuth = useOAuth;
+    
+    if (useOAuth) {
+      // Validate required OAuth environment variables
+      if (!process.env.GOOGLE_OAUTH_CLIENT_ID || !process.env.GOOGLE_OAUTH_CLIENT_SECRET) {
+        throw new Error(`
+          ❌ Missing Google OAuth credentials!
+          
+          Please set up your .env file with:
+          GOOGLE_OAUTH_CLIENT_ID=your_client_id_here
+          GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret_here
+          GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3009/auth/callback
+          GOOGLE_OAUTH_REFRESH_TOKEN=your_refresh_token_here
+          
+          Follow the setup guide in CALENDAR_SETUP.md
+        `);
+      }
+
+      // Initialize OAuth2 client for user calendar access
+      this.auth = new OAuth2Client({
+        clientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+        redirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || 'http://localhost:3009/auth/callback'
+      });
+      
+      // Set credentials if refresh token is available
+      if (process.env.GOOGLE_OAUTH_REFRESH_TOKEN) {
+        this.auth.setCredentials({
+          refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN
+        });
+      } else {
+        console.log(`
+          ⚠️  No refresh token found!
+          
+          To complete OAuth setup:
+          1. Visit: http://localhost:3009/api/auth/google
+          2. Follow the authorization flow
+          3. Add the refresh token to your .env file
+        `);
+      }
+    } else {
+      // Initialize the JWT auth with service account credentials (fallback)
+      this.auth = new JWT({
+        email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+        key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        scopes: [
+          'https://www.googleapis.com/auth/calendar',
+          'https://www.googleapis.com/auth/calendar.events'
+        ]
+      });
+    }
 
     this.calendar = google.calendar({ version: 'v3', auth: this.auth });
+  }
+
+  /**
+   * Get OAuth2 authorization URL for initial setup
+   */
+  getAuthUrl(): string {
+    if (!this.useOAuth || !(this.auth instanceof OAuth2Client)) {
+      throw new Error('OAuth2 not configured');
+    }
+
+    const authUrl = this.auth.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/calendar.events'
+      ],
+      prompt: 'consent' // Force consent to get refresh token
+    });
+
+    return authUrl;
+  }
+
+  /**
+   * Exchange authorization code for tokens
+   */
+  async setAuthCode(code: string): Promise<void> {
+    if (!this.useOAuth || !(this.auth instanceof OAuth2Client)) {
+      throw new Error('OAuth2 not configured');
+    }
+
+    const { tokens } = await this.auth.getToken(code);
+    this.auth.setCredentials(tokens);
+    
+    console.log('Refresh Token:', tokens.refresh_token);
+    console.log('Please add this to your .env file as GOOGLE_OAUTH_REFRESH_TOKEN');
+  }
+
+  /**
+   * Ensure we have a valid access token, refresh if necessary
+   */
+  private async ensureValidToken(): Promise<void> {
+    if (!this.useOAuth || !(this.auth instanceof OAuth2Client)) {
+      return; // Service account doesn't need token refresh
+    }
+
+    try {
+      // Check if we have credentials
+      const credentials = this.auth.credentials;
+      if (!credentials.refresh_token) {
+        throw new Error('No refresh token available. Please complete OAuth setup first.');
+      }
+
+      // Check if access token is expired or about to expire
+      const now = Date.now();
+      const expiryDate = credentials.expiry_date;
+      
+      if (!credentials.access_token || (expiryDate && expiryDate <= now + 60000)) {
+        console.log('🔄 Refreshing access token...');
+        const { credentials: newCredentials } = await this.auth.refreshAccessToken();
+        this.auth.setCredentials(newCredentials);
+        console.log('✅ Access token refreshed successfully');
+      }
+    } catch (error) {
+      console.error('❌ Token refresh failed:', error);
+      throw new Error(`Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please re-authorize your application.`);
+    }
   }
 
   /**
@@ -35,6 +145,8 @@ export class GoogleCalendarService {
     calendarId?: string;
   }): Promise<string> {
     try {
+      // Ensure we have a valid token before making API calls
+      await this.ensureValidToken();
       const {
         title,
         description = '',
@@ -45,13 +157,16 @@ export class GoogleCalendarService {
         calendarId = 'primary'
       } = params;
 
-      // Prepare attendees array
-      const attendees = attendeeEmails.map(email => ({ email }));
-
+      // For service accounts, we can't invite attendees without domain delegation
+      // So we'll create the event without attendees and provide alternative instructions
+      const attendees = this.useOAuth ? attendeeEmails.map(email => ({ email })) : [];
+      
       // Create the event
       const event = {
         summary: title,
-        description,
+        description: this.useOAuth 
+          ? description 
+          : `${description}\n\n📧 Attendees to invite manually: ${attendeeEmails.join(', ')}`,
         location,
         start: {
           dateTime: startDateTime,
@@ -75,18 +190,26 @@ export class GoogleCalendarService {
         calendarId,
         resource: event,
         conferenceDataVersion: 1,
-        sendUpdates: 'all' // Send invitations to attendees
+        sendUpdates: this.useOAuth && attendees.length > 0 ? 'all' : 'none'
       });
 
       const eventId = response.data.id;
       const eventLink = response.data.htmlLink;
       const meetLink = response.data.conferenceData?.entryPoints?.[0]?.uri || 'No meet link generated';
 
-      return `✅ Meeting scheduled successfully!
+      let resultMessage = `✅ Meeting scheduled successfully!
 📅 Event ID: ${eventId}
 🔗 Calendar Link: ${eventLink}
-📹 Meet Link: ${meetLink}
-📧 Invitations sent to: ${attendeeEmails.join(', ') || 'No attendees'}`;
+📹 Meet Link: ${meetLink}`;
+
+      if (this.useOAuth && attendeeEmails.length > 0) {
+        resultMessage += `\n📧 Invitations sent to: ${attendeeEmails.join(', ')}`;
+      } else if (!this.useOAuth && attendeeEmails.length > 0) {
+        resultMessage += `\n📧 Please manually invite: ${attendeeEmails.join(', ')}`;
+        resultMessage += `\n💡 Share this calendar link with attendees: ${eventLink}`;
+      }
+
+      return resultMessage;
 
     } catch (error) {
       console.error('Error scheduling meeting:', error);
@@ -104,6 +227,8 @@ export class GoogleCalendarService {
     timeMax?: string;
   }): Promise<string> {
     try {
+      // Ensure we have a valid token before making API calls
+      await this.ensureValidToken();
       const {
         maxResults = 10,
         calendarId = 'primary',
@@ -165,6 +290,8 @@ export class GoogleCalendarService {
     calendarId?: string;
   }): Promise<string> {
     try {
+      // Ensure we have a valid token before making API calls
+      await this.ensureValidToken();
       const {
         date,
         duration,
@@ -251,6 +378,8 @@ export class GoogleCalendarService {
     sendUpdates?: boolean;
   }): Promise<string> {
     try {
+      // Ensure we have a valid token before making API calls
+      await this.ensureValidToken();
       const {
         eventId,
         calendarId = 'primary',

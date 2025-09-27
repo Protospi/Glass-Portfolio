@@ -32,3 +32,21 @@ yarn-error.log*
 .next/
 .nuxt/
 .temp/
+
+# Google Calendar OAuth
+google-calendar-oauth.md
+
+# Calendar Setup
+CALENDAR_SETUP.md
+
+# OAuth Fix Summary
+OAUTH_FIX_SUMMARY.md
+
+# OAuth Fix Summary
+OAUTH_FIX_SUMMARY.md
+
+# Extract Token
+extract-token.js
+
+# Check OAuth
+check-oauth.js

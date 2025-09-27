@@ -5,6 +5,7 @@ import { insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
 import { generateAIResponse, detectLanguage, detectLanguageAndTranslate, transcribeAudio } from "./openai";
 import { engine } from "./resources/engine";
+import { GoogleCalendarService } from "./google-calendar";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -268,6 +269,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "All messages cleared" });
     } catch (error) {
       res.status(500).json({ message: "Failed to clear messages" });
+    }
+  });
+
+  // Google Calendar OAuth setup routes
+  app.get("/api/auth/google", async (_req, res) => {
+    try {
+      const calendarService = new GoogleCalendarService(true);
+      const authUrl = calendarService.getAuthUrl();
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("OAuth URL generation error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate OAuth URL";
+      
+      // Send detailed error response for OAuth setup issues
+      if (errorMessage.includes('Missing Google OAuth credentials')) {
+        res.status(400).json({ 
+          error: "OAuth not configured", 
+          message: errorMessage,
+          setupInstructions: {
+            step1: "Create a .env file in your project root",
+            step2: "Add Google OAuth credentials from Google Cloud Console",
+            step3: "Set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET",
+            step4: "Restart your server and try again",
+            guide: "Check CALENDAR_SETUP.md for detailed instructions"
+          }
+        });
+      } else {
+        res.status(500).json({ error: errorMessage });
+      }
+    }
+  });
+
+  app.get("/auth/callback", async (req, res) => {
+    try {
+      const { code } = req.query;
+      if (!code) {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f5f5f5;">
+              <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h1 style="color: #d32f2f;">❌ Authorization Failed</h1>
+                <p>Authorization code not provided. Please try the authorization process again.</p>
+                <a href="/booking" style="background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Back to Booking</a>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      const calendarService = new GoogleCalendarService(true);
+      await calendarService.setAuthCode(code as string);
+      
+      // Get the tokens to display
+      const auth = (calendarService as any).auth;
+      const credentials = auth.credentials;
+      
+      console.log('\n🎉 OAUTH SETUP SUCCESSFUL! 🎉');
+      console.log('=================================');
+      console.log('✅ Refresh Token:', credentials.refresh_token);
+      console.log('✅ Access Token:', credentials.access_token);
+      console.log('\n📝 Add this to your .env file:');
+      console.log(`GOOGLE_OAUTH_REFRESH_TOKEN=${credentials.refresh_token}`);
+      console.log('=================================\n');
+      
+      res.send(`
+        <html>
+          <head>
+            <title>OAuth Setup Complete</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; background-color: #f5f5f5; }
+              .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+              .success { color: #2e7d32; }
+              .token-box { background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: monospace; word-break: break-all; }
+              .copy-btn { background: #1976d2; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px; }
+              .copy-btn:hover { background: #1565c0; }
+              .step { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1 class="success">🎉 OAuth Setup Complete!</h1>
+              <p>Your Google Calendar integration is now authorized and ready to use.</p>
+              
+              <div class="step">
+                <h3>📝 Step 1: Copy your refresh token</h3>
+                <p>Add this line to your <code>.env</code> file:</p>
+                <div class="token-box">
+                  <strong>GOOGLE_OAUTH_REFRESH_TOKEN=</strong>${credentials.refresh_token}
+                  <button class="copy-btn" onclick="navigator.clipboard.writeText('GOOGLE_OAUTH_REFRESH_TOKEN=${credentials.refresh_token}')">Copy</button>
+                </div>
+              </div>
+              
+              <div class="step">
+                <h3>🔄 Step 2: Restart your server</h3>
+                <p>After adding the refresh token to your .env file, restart your server for the changes to take effect.</p>
+              </div>
+              
+              <div class="step">
+                <h3>✅ Step 3: Test the booking system</h3>
+                <p>Your calendar integration is now ready!</p>
+                <a href="/booking" style="background: #2e7d32; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px;">
+                  🗓️ Test Booking Page
+                </a>
+              </div>
+              
+              <hr style="margin: 30px 0;">
+              <h3>🔧 Technical Details</h3>
+              <p><strong>Access Token:</strong> <code>${credentials.access_token?.substring(0, 20)}...</code></p>
+              <p><strong>Token Type:</strong> ${credentials.token_type || 'Bearer'}</p>
+              <p><strong>Expires:</strong> ${credentials.expiry_date ? new Date(credentials.expiry_date).toLocaleString() : 'N/A'}</p>
+            </div>
+            
+            <script>
+              // Auto-scroll to top
+              window.scrollTo(0, 0);
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("OAuth callback error:", error);
+      res.status(500).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; padding: 40px; background-color: #f5f5f5;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <h1 style="color: #d32f2f;">❌ Authorization Failed</h1>
+              <p><strong>Error:</strong> ${error instanceof Error ? error.message : 'Unknown error occurred'}</p>
+              <p>Please check your server logs for more details and try again.</p>
+              <a href="/booking" style="background: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">← Back to Booking</a>
+            </div>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  // Calendar availability check endpoint
+  app.get("/api/calendar/availability", async (req, res) => {
+    try {
+      const { date, duration = 60 } = req.query;
+      
+      if (!date) {
+        return res.status(400).json({ error: "Date parameter is required (YYYY-MM-DD format)" });
+      }
+
+      const calendarService = new GoogleCalendarService(true);
+      const availability = await calendarService.findAvailableSlots({
+        date: date as string,
+        duration: parseInt(duration as string),
+        workingHoursStart: "09:00",
+        workingHoursEnd: "18:00"
+      });
+
+      res.json({ availability });
+    } catch (error) {
+      console.error("Calendar availability error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to check calendar availability";
+      
+      // Provide helpful error messages for common OAuth issues
+      if (errorMessage.includes('OAuth')) {
+        res.status(401).json({ 
+          error: "OAuth not configured or expired", 
+          message: errorMessage,
+          action: "Please complete OAuth setup first"
+        });
+      } else if (errorMessage.includes('invalid_grant')) {
+        res.status(401).json({ 
+          error: "OAuth token expired or invalid", 
+          message: "Your refresh token has expired or is invalid",
+          action: "Please re-authorize your application by visiting /api/auth/google"
+        });
+      } else {
+        res.status(500).json({ error: errorMessage });
+      }
     }
   });
 
