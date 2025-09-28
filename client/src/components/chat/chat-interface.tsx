@@ -212,9 +212,10 @@ export function ChatInterface() {
           onClick={handleNewConversation}
           className="glass-chip hover:bg-blue-500/20 transition-all duration-200 group border-0 bg-transparent"
           data-testid="button-new-conversation"
+          title={t('tooltips.newConversation')}
         >
           <Plus className="h-5 w-5 text-slate-600 dark:text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition-all" />
-          <span className="sr-only">New conversation</span>
+          <span className="sr-only">{t('tooltips.newConversation')}</span>
         </Button>
 
         {/* Title - Center */}
