@@ -12,10 +12,11 @@ import {
   Plus,
   Briefcase,
   BotMessageSquare,
+  Server
 } from "lucide-react";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput, ChatInputRef } from "./chat-input";
-import { ThemeToggle } from "./theme-toggle";
+import { SettingsDropdown } from "./settings-dropdown";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { Message } from "@shared/schema";
@@ -226,8 +227,8 @@ export function ChatInterface() {
           {t('chat.title')}
         </h1>
 
-        {/* Theme Toggle - Right */}
-        <ThemeToggle />
+        {/* Settings Dropdown - Right */}
+        <SettingsDropdown />
       </header>
 
       {/* Main Content Area */}

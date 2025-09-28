@@ -1,5 +1,5 @@
 import { useState, useRef, useImperativeHandle, forwardRef, useEffect, useCallback } from "react";
-import { ArrowUp, Mic, Square } from "lucide-react";
+import { ArrowUp, Mic, Square, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
@@ -240,6 +240,20 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
             
             {/* Bottom toolbar */}
             <div className="flex items-center justify-between pt-2 border-t border-white/10">
+              {/* Left side - Upload button */}
+              <div className="flex items-center">
+                <Button
+                  type="button"
+                  disabled={isLoading}
+                  className="hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl"
+                  title="Upload file"
+                  data-testid="button-upload"
+                >
+                  <Download className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition" style={{width: '18px', height: '18px'}} />
+                </Button>
+              </div>
+              
+              {/* Center - Microphone button */}
               <div className="flex items-center space-x-2">
                 <Button
                   type="button"
@@ -249,7 +263,7 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
                   onTouchStart={handleMicPress}
                   onTouchEnd={handleMicRelease}
                   disabled={isLoading || isTranscribing}
-                  className={`transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl ${
+                  className={`transition-all duration-200 group bg-transparent border-0 p-2 rounded-full ${
                     isRecording ? 'bg-red-500/20 hover:bg-red-500/30' : 'hover:bg-red-500/20'
                   }`}
                   title="Hold to record audio"
@@ -271,14 +285,17 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
                 )}
               </div>
               
-              <Button
-                type="submit"
-                disabled={!message.trim() || isLoading}
-                className="hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl"
-                data-testid="button-send"
-              >
-                <ArrowUp className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:scale-110 transition" style={{width: '21px', height: '21px'}} />
-              </Button>
+              {/* Right side - Submit button */}
+              <div className="flex items-center">
+                <Button
+                  type="submit"
+                  disabled={!message.trim() || isLoading}
+                  className="hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl"
+                  data-testid="button-send"
+                >
+                  <ArrowUp className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:scale-110 transition" style={{width: '21px', height: '21px'}} />
+                </Button>
+              </div>
             </div>
           </form>
         </div>
