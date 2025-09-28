@@ -9,6 +9,8 @@ import { DynamicTranslationsProvider } from "@/lib/DynamicTranslations";
 import IntroAnimation from "@/components/intro/intro-animation";
 import LoadingScreen from "@/components/loading/loading-screen";
 import Chat from "@/pages/chat";
+import ServerView from "@/pages/serverView";
+import AnalyticsView from "@/pages/analyticsView";
 import NotFound from "@/pages/not-found";
 
 // Landing page component that shows the intro animation
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/loading" component={LoadingScreen} />
       <Route path="/chat" component={Chat} />
+      <Route path="/server" component={ServerView} />
+      <Route path="/analytics" component={AnalyticsView} />
       <Route component={NotFound} />
     </Switch>
   );

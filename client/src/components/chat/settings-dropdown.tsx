@@ -1,4 +1,4 @@
-import { Settings, Server, BarChart3, Sun, Moon } from "lucide-react";
+import { Settings, Server, BarChart3, Sun, Moon, MessageCircle, AccessibilityIcon } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,19 +8,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 
 export function SettingsDropdown() {
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
 
   const handleServerClick = () => {
-    // TODO: Implement server settings functionality
-    console.log("Server settings clicked");
+    setLocation("/server");
+  };
+
+  const handleChatClick = () => {
+    setLocation("/chat");
   };
 
   const handleAnalyticsClick = () => {
-    // TODO: Implement analytics functionality
-    console.log("Analytics clicked");
+    setLocation("/analytics");
   };
 
   return (
@@ -43,6 +47,16 @@ export function SettingsDropdown() {
         sideOffset={8}
       >
         <div className="flex flex-col">
+          <DropdownMenuItem 
+            onClick={handleChatClick}
+            className="flex items-center justify-center w-10 h-10 text-slate-600 dark:text-muted-foreground hover:text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer rounded-none"
+            title={t('settings.chat')}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '23px' }}>
+              accessibility_new
+            </span>
+          </DropdownMenuItem>
+          
           <DropdownMenuItem 
             onClick={handleServerClick}
             className="flex items-center justify-center w-10 h-10 text-slate-600 dark:text-muted-foreground hover:text-blue-400 hover:bg-blue-500/20 transition-colors cursor-pointer rounded-none"

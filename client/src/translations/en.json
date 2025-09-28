@@ -56,8 +56,23 @@
     "themeToggle": "Toggle Theme"
   },
   "settings": {
+    "chat": "Chat",
     "server": "Server",
     "analytics": "Analytics", 
     "theme": "Theme"
+  },
+  "server": {
+    "title": "Server View",
+    "emptyState": {
+      "title": "Server View",
+      "description": "This area will be populated with server information soon."
+    }
+  },
+  "analytics": {
+    "title": "Analytics View",
+    "emptyState": {
+      "title": "Analytics View",
+      "description": "This area will be populated with analytics information soon."
+    }
   }
 } 
