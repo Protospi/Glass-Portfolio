@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertMessageSchema } from "@shared/schema";
 import { z } from "zod";
-import { generateAIResponse, detectLanguage, detectLanguageAndTranslate, transcribeAudio } from "./openai";
+import { generateAIResponse, detectLanguage, detectLanguageAndTranslate, transcribeAudio, uploadFileToOpenAI } from "./openai";
 import { engine } from "./resources/engine";
 import { GoogleCalendarService } from "./google-calendar";
 import multer from "multer";
@@ -59,6 +59,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cb(null, true);
       } else {
         cb(new Error('Only audio files are allowed'));
+      }
+    }
+  });
+
+  // Configure multer for document file uploads
+  const fileUpload = multer({
+    storage: multer.diskStorage({
+      destination: 'uploads/',
+      filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname) || '';
+        cb(null, Date.now() + ext);
+      }
+    }),
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB limit for documents
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept common document formats
+      const allowedTypes = [
+        'application/pdf',
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/markdown',
+        'application/json',
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only document files are allowed (PDF, TXT, DOC, DOCX, MD, JSON, CSV, XLS, XLSX)'));
       }
     }
   });
@@ -163,6 +197,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // File upload endpoint
+  app.post("/api/upload-file", fileUpload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+
+      console.log('File received:', {
+        filename: req.file.filename,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        path: req.file.path
+      });
+
+      // Check if file exists
+      if (!fs.existsSync(req.file.path)) {
+        console.error('File does not exist at path:', req.file.path);
+        return res.status(400).json({ error: "File not found" });
+      }
+
+      // Upload file to OpenAI
+      const fileId = await uploadFileToOpenAI(req.file.path);
+      
+      // Clean up the temporary file
+      fs.unlinkSync(req.file.path);
+      
+      console.log('File uploaded to OpenAI with ID:', fileId);
+      
+      res.json({
+        fileId,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        type: req.file.mimetype
+      });
+    } catch (error) {
+      // Clean up the temporary file in case of error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      
+      console.error("File upload error:", error);
+      res.status(500).json({ error: "Failed to upload file" });
+    }
+  });
+
   // Detect language and translate interface
   app.post("/api/language-detection", async (req, res) => {
     try {
@@ -208,7 +288,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate AI response for chat completion
   app.post("/api/chat/completion", async (req, res) => {
     try {
-      const { content } = z.object({ content: z.string() }).parse(req.body);
+      const { content, fileId } = z.object({ 
+        content: z.string(),
+        fileId: z.string().optional()
+      }).parse(req.body);
       
       // Small delay to ensure user message is saved (race condition fix)
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -229,7 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Generate AI response using the engine
-      const engineResult = await aiEngine.run(content, engineInput);
+      // If fileId is provided, we need to modify the engine input to include file information
+      let engineResult;
+      if (fileId) {
+        console.log('📎 File attached with ID:', fileId);
+        // For now, we'll add file information to the user message
+        // The engine will need to be updated to handle file content in the future
+        const fileMessage = `[File attached: ${fileId}] ${content}`;
+        engineResult = await aiEngine.run(fileMessage, engineInput);
+      } else {
+        engineResult = await aiEngine.run(content, engineInput);
+      }
       
       // Extract the AI response from engine result
       // The engine returns the conversation array, find the last assistant message

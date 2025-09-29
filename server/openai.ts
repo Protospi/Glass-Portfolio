@@ -332,6 +332,28 @@ export async function transcribeAudio(audioFilePath: string): Promise<{ text: st
   }
 }
 
+// Upload file to OpenAI
+export async function uploadFileToOpenAI(filePath: string): Promise<string> {
+  try {
+    const file = await openai.files.create({
+      file: fs.createReadStream(filePath),
+      purpose: "user_data",
+    });
+
+    console.log('File uploaded to OpenAI:', {
+      id: file.id,
+      filename: file.filename,
+      purpose: file.purpose,
+      status: file.status
+    });
+
+    return file.id;
+  } catch (error) {
+    console.error('OpenAI file upload error:', error);
+    throw new Error('Failed to upload file to OpenAI');
+  }
+}
+
 // Keep the original function for backward compatibility
 export async function detectLanguage(userInput: string) {
   try {

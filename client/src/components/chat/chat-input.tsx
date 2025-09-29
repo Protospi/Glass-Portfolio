@@ -1,11 +1,11 @@
 import { useState, useRef, useImperativeHandle, forwardRef, useEffect, useCallback } from "react";
-import { ArrowUp, Mic, Square, Download } from "lucide-react";
+import { ArrowUp, Mic, Square, Download, Upload, FileInput, FileCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, fileId?: string) => void;
   isLoading?: boolean;
 }
 
@@ -19,7 +19,11 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [fileId, setFileId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,8 +61,11 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
     e.preventDefault();
     const trimmedMessage = message.trim();
     if (trimmedMessage && !isLoading) {
-      onSendMessage(trimmedMessage);
+      onSendMessage(trimmedMessage, fileId || undefined);
       setMessage("");
+      // Clear file after sending
+      setSelectedFile(null);
+      setFileId(null);
     }
   };
 
@@ -180,6 +187,53 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      uploadFile(file);
+    }
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    setFileId(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/upload-file', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      const data = await response.json();
+      setFileId(data.fileId);
+      console.log('File uploaded successfully:', data);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file. Please try again.');
+      setSelectedFile(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Handle Escape key to cancel recording if in progress
   useEffect(() => {
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -211,6 +265,15 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
         <div className="glass-input rounded-3xl p-4">
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileSelect}
+            className="hidden"
+            accept=".pdf,.txt,.doc,.docx,.md,.json,.csv,.xlsx,.xls"
+          />
+          
           {/* Main input area */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="min-h-[80px] flex items-start">
@@ -238,18 +301,41 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
               </div>
             </div>
             
+            {/* File display */}
+            {selectedFile && (
+              <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                <FileCheck className="w-4 h-4 text-green-500" />
+                <span className="text-sm text-green-600 dark:text-green-400 flex-1 truncate">
+                  {selectedFile.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="p-1 hover:bg-red-500/20 rounded-full transition-colors"
+                  title="Remove file"
+                >
+                  <X className="w-3 h-3 text-red-500" />
+                </button>
+              </div>
+            )}
+            
             {/* Bottom toolbar */}
             <div className="flex items-center justify-between pt-2 border-t border-white/10">
               {/* Left side - Upload button */}
               <div className="flex items-center">
                 <Button
                   type="button"
-                  disabled={isLoading}
+                  onClick={handleFileUpload}
+                  disabled={isLoading || isUploading}
                   className="hover:bg-blue-500/20 transition-all duration-200 group bg-transparent border-0 p-2 rounded-xl"
                   title="Upload file"
                   data-testid="button-upload"
                 >
-                  <Download className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition" style={{width: '18px', height: '18px'}} />
+                  {isUploading ? (
+                    <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" style={{width: '18px', height: '18px'}} />
+                  ) : (
+                    <FileInput className="w-6 h-6 text-gray-700 dark:text-muted-foreground group-hover:text-blue-400 group-hover:scale-110 transition" style={{width: '18px', height: '18px'}} />
+                  )}
                 </Button>
               </div>
               

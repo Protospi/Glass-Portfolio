@@ -19,10 +19,11 @@ export class engine  {
     }
 
     // Define run function
-    async run(userInput: string, input: any[]) {
+    async run(userInput: string, input: any[], fileId?: string) {
         console.log('🚀 Starting AI Engine...')
         console.log('📝 User Input:', userInput)
         console.log('📦 Initial Input Array Length:', input.length)
+        console.log('📁 File ID:', fileId || 'No file ID provided')
 
         // Define raw variables - use absolute paths
         const __filename = fileURLToPath(import.meta.url)
@@ -56,10 +57,29 @@ export class engine  {
 
             // Define input messages
             if (input.length === 0) {
+                // Create user message with file if fileId is provided
+                const extractedFileId = this.extractFileIdFromContent(userInput);
+                const actualFileId = fileId || extractedFileId;
+                const cleanUserInput = extractedFileId ? userInput.replace(/\[File attached: [^\]]+\]\s*/, '') : userInput;
+
+                const userMessage = actualFileId ? {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_file",
+                            file_id: actualFileId,
+                        },
+                        {
+                            type: "input_text",
+                            text: cleanUserInput,
+                        },
+                    ],
+                } : { role: "user", content: userInput };
+
                 input = [
                     { role: "system", content: finalPrompt },
-                    { role: "user", content: userInput }
-                    ]
+                    userMessage
+                ]
                 console.log('🆕 New conversation - system prompt added')
             } else {
                 // Always ensure system prompt is first and current
@@ -68,10 +88,65 @@ export class engine  {
                     ...input.filter(msg => msg.role !== "system")
                 ];
                 
-                // Add current user input if it's not already the last user message
-                const lastUserMsg = input.filter(msg => msg.role === "user").pop();
-                if (!lastUserMsg || lastUserMsg.content !== userInput) {
-                    input.push({ role: "user", content: userInput });
+                // Handle the last user message
+                const lastUserMsgIndex = input.findLastIndex(msg => msg.role === "user");
+                const lastUserMsg = lastUserMsgIndex >= 0 ? input[lastUserMsgIndex] : null;
+                
+                if (lastUserMsg) {
+                    // Extract file ID from either the fileId parameter or the message content
+                    const extractedFileId = this.extractFileIdFromContent(userInput);
+                    const actualFileId = fileId || extractedFileId;
+                    const cleanUserInput = extractedFileId ? userInput.replace(/\[File attached: [^\]]+\]\s*/, '') : userInput;
+
+                    if (actualFileId) {
+                        lastUserMsg.content = [
+                            {
+                                type: "input_file",
+                                file_id: actualFileId,
+                            },
+                            {
+                                type: "input_text",
+                                text: cleanUserInput,
+                            },
+                        ];
+                        console.log('🔄 Updated last user message to array format with file ID:', actualFileId);
+                    } else {
+                        // If no file ID, just update the text content
+                        if (typeof lastUserMsg.content === 'string') {
+                            lastUserMsg.content = userInput;
+                        } else if (Array.isArray(lastUserMsg.content)) {
+                            // Update the text part of existing array content
+                            const textIndex = lastUserMsg.content.findIndex((c: any) => c.type === "input_text");
+                            if (textIndex >= 0) {
+                                lastUserMsg.content[textIndex].text = userInput;
+                            } else {
+                                lastUserMsg.content.push({
+                                    type: "input_text",
+                                    text: userInput,
+                                });
+                            }
+                        } else {
+                            // Update simple string content
+                            lastUserMsg.content = userInput;
+                        }
+                    }
+                } else {
+                    // No existing user message, create a new one
+                    const userMessage = fileId ? {
+                        role: "user",
+                        content: [
+                            {
+                                type: "input_file",
+                                file_id: fileId,
+                            },
+                            {
+                                type: "input_text",
+                                text: userInput,
+                            },
+                        ],
+                    } : { role: "user", content: userInput };
+                    
+                    input.push(userMessage);
                 }
                 
                 console.log('🔄 Rebuilt conversation array with', input.length, 'messages');
@@ -83,6 +158,7 @@ export class engine  {
             //     const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
             //     console.log(`  ${i + 1}. [${msg.role}]: ${content.substring(0, 50)}...`);
             // });
+            console.log('INPUT:', input)
 
             // Generate AI response
             let response = await openai.responses.create({
@@ -265,6 +341,12 @@ export class engine  {
         return result
     }
 
+    // Define private function to extract file ID from message content
+    private extractFileIdFromContent(content: string): string | null {
+        const match = content.match(/\[File attached: ([^\]]+)\]/);
+        return match ? match[1] : null;
+    }
+
     // Define private get portfolio info function
     private async getPortfolioInfo(portfolio: string) {
 
@@ -287,11 +369,13 @@ async function main() {
         // Test input
         const testUserInput = "Hello, can you get information about project 1?"
         const testInputArray: any[] = []
+        const testFileId = "test-file-id-123"
         
         console.log('🧪 Running test with input:', testUserInput)
+        console.log('🧪 Running test with file ID:', testFileId)
         
         // Run the engine
-        const result = await engineInstance.run(testUserInput, testInputArray)
+        const result = await engineInstance.run(testUserInput, testInputArray, testFileId)
         
         console.log('📋 Final result array length:', result?.length || 0)
         

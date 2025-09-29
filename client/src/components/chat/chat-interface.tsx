@@ -124,29 +124,30 @@ export function ChatInterface() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, fileId }: { content: string; fileId?: string }) => {
       const response = await apiRequest("POST", "/api/messages", {
         content,
         isUser: true,
       });
       return response.json();
     },
-    onSuccess: (_, content) => {
+    onSuccess: (_, { content, fileId }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
 
       // Generate AI response using Pedro's persona
       setIsTyping(true);
       setTimeout(() => {
-        sendAssistantResponseMutation.mutate(content);
+        sendAssistantResponseMutation.mutate({ content, fileId });
       }, 1000);
     },
   });
 
   const sendAssistantResponseMutation = useMutation({
-    mutationFn: async (userMessage: string) => {
+    mutationFn: async ({ content, fileId }: { content: string; fileId?: string }) => {
       // Call the OpenAI chat completion endpoint
       const response = await apiRequest("POST", "/api/chat/completion", {
-        content: userMessage,
+        content,
+        fileId,
       });
       return response.json();
     },
@@ -159,8 +160,8 @@ export function ChatInterface() {
     },
   });
 
-  const handleSendMessage = (content: string) => {
-    sendMessageMutation.mutate(content);
+  const handleSendMessage = (content: string, fileId?: string) => {
+    sendMessageMutation.mutate({ content, fileId });
     // Focus the input after sending message
     if (chatInputRef.current) {
       chatInputRef.current.focus();
