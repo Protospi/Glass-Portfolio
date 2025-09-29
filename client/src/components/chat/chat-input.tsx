@@ -303,9 +303,9 @@ export const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({ onSendMessa
             
             {/* File display */}
             {selectedFile && (
-              <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
-                <FileCheck className="w-4 h-4 text-green-500" />
-                <span className="text-sm text-green-600 dark:text-green-400 flex-1 truncate">
+              <div className="inline-flex items-center gap-2 p-2 bg-foreground/5 rounded-lg">
+                <FileCheck className="w-4 h-4 text-foreground" />
+                <span className="text-sm text-foreground truncate max-w-[200px]">
                   {selectedFile.name}
                 </span>
                 <button
