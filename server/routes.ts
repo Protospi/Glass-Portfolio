@@ -9,6 +9,8 @@ import { GoogleCalendarService } from "./google-calendar";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { ObjectId } from 'mongodb';
+import * as db from './database';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize engine instance
@@ -536,6 +538,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: errorMessage });
       }
+    }
+  });
+
+  // MongoDB Analytics Routes
+  
+  // Connect to MongoDB when server starts
+  await db.connectToDatabase();
+
+  // User Routes
+  app.post("/api/analytics/users", async (req, res) => {
+    try {
+      const { name, email, ip } = req.body;
+      const result = await db.createUser({ name, email, ip });
+      res.json(result);
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.get("/api/analytics/users/:id", async (req, res) => {
+    try {
+      const user = await db.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "Failed to get user" });
+    }
+  });
+
+  app.put("/api/analytics/users/:id", async (req, res) => {
+    try {
+      const result = await db.updateUser(req.params.id, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Update user error:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/analytics/users/:id", async (req, res) => {
+    try {
+      const result = await db.deleteUser(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Message Routes
+  app.post("/api/analytics/messages", async (req, res) => {
+    try {
+      const { userId, text, author } = req.body;
+      const result = await db.createMessage({ userId: new ObjectId(userId), text, author });
+      res.json(result);
+    } catch (error) {
+      console.error("Create message error:", error);
+      res.status(500).json({ error: "Failed to create message" });
+    }
+  });
+
+  app.get("/api/analytics/messages/:id", async (req, res) => {
+    try {
+      const message = await db.getMessage(req.params.id);
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+      res.json(message);
+    } catch (error) {
+      console.error("Get message error:", error);
+      res.status(500).json({ error: "Failed to get message" });
+    }
+  });
+
+  app.get("/api/analytics/messages/user/:userId", async (req, res) => {
+    try {
+      const messages = await db.getUserMessages(req.params.userId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get user messages error:", error);
+      res.status(500).json({ error: "Failed to get user messages" });
+    }
+  });
+
+  app.put("/api/analytics/messages/:id", async (req, res) => {
+    try {
+      const result = await db.updateMessage(req.params.id, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Update message error:", error);
+      res.status(500).json({ error: "Failed to update message" });
+    }
+  });
+
+  app.delete("/api/analytics/messages/:id", async (req, res) => {
+    try {
+      const result = await db.deleteMessage(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Delete message error:", error);
+      res.status(500).json({ error: "Failed to delete message" });
+    }
+  });
+
+  // Function Routes
+  app.post("/api/analytics/functions", async (req, res) => {
+    try {
+      const { userId, args, response } = req.body;
+      const result = await db.createFunction({ userId: new ObjectId(userId), args, response });
+      res.json(result);
+    } catch (error) {
+      console.error("Create function error:", error);
+      res.status(500).json({ error: "Failed to create function" });
+    }
+  });
+
+  app.get("/api/analytics/functions/:id", async (req, res) => {
+    try {
+      const func = await db.getFunction(req.params.id);
+      if (!func) {
+        return res.status(404).json({ error: "Function not found" });
+      }
+      res.json(func);
+    } catch (error) {
+      console.error("Get function error:", error);
+      res.status(500).json({ error: "Failed to get function" });
+    }
+  });
+
+  app.get("/api/analytics/functions/user/:userId", async (req, res) => {
+    try {
+      const functions = await db.getUserFunctions(req.params.userId);
+      res.json(functions);
+    } catch (error) {
+      console.error("Get user functions error:", error);
+      res.status(500).json({ error: "Failed to get user functions" });
+    }
+  });
+
+  app.put("/api/analytics/functions/:id", async (req, res) => {
+    try {
+      const result = await db.updateFunction(req.params.id, req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Update function error:", error);
+      res.status(500).json({ error: "Failed to update function" });
+    }
+  });
+
+  app.delete("/api/analytics/functions/:id", async (req, res) => {
+    try {
+      const result = await db.deleteFunction(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Delete function error:", error);
+      res.status(500).json({ error: "Failed to delete function" });
+    }
+  });
+
+  // Test Routes for Creating Sample Documents
+  app.post("/api/analytics/test/create-samples", async (req, res) => {
+    try {
+      // Create a test user
+      const userResult = await db.createUser({
+        name: "Test User",
+        email: "test@example.com",
+        ip: "127.0.0.1"
+      });
+      
+      // Create a test message
+      const messageResult = await db.createMessage({
+        userId: userResult.insertedId,
+        text: "Hello, this is a test message",
+        author: "user"
+      });
+
+      // Create a test function call
+      const functionResult = await db.createFunction({
+        userId: userResult.insertedId,
+        args: { name: "testFunction", parameters: { test: true } },
+        response: { status: "success", result: "test completed" }
+      });
+
+      res.json({
+        user: userResult,
+        message: messageResult,
+        function: functionResult
+      });
+    } catch (error) {
+      console.error("Create test samples error:", error);
+      res.status(500).json({ error: "Failed to create test samples" });
     }
   });
 

@@ -66,6 +66,13 @@
     "emptyState": {
       "title": "Server View",
       "description": "This area will be populated with server information soon."
+    },
+    "flowCanvas": {
+      "title": "Agent Architecture"
+    },
+    "logs": {
+      "title": "Conversation Logs",
+      "empty": "No conversation logs yet"
     }
   },
   "analytics": {

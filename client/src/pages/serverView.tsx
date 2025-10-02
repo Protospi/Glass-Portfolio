@@ -1,8 +1,9 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDropdown } from "@/components/chat/settings-dropdown";
+import ReactFlowCanvas from "@/components/server/reactFlow";
+import ConversationLogs from "@/components/server/conversationLogs";
 
 export default function ServerView() {
   const { t } = useTranslation();
@@ -15,7 +16,7 @@ export default function ServerView() {
   return (
     <div className="h-screen flex flex-col bg-gradient-dark relative">
       {/* Header Row with New Conversation Button, Title, and Settings Dropdown */}
-      <header className="flex items-center justify-between p-4 z-10">
+      <header className="flex items-center justify-between p-4 z-10 flex-shrink-0">
         {/* New Conversation Button - Left */}
         <Button
           variant="ghost"
@@ -39,21 +40,35 @@ export default function ServerView() {
         <SettingsDropdown />
       </header>
 
-      {/* Main Content Area - Empty for now */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative overflow-hidden">
-        <div className="flex-1 flex items-center justify-center px-8">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full glass-chip flex items-center justify-center mx-auto mb-4">
-              <Server className="w-6 h-6 text-blue-500" />
-            </div>
-            <h2 className="text-lg font-normal text-slate-600 dark:text-muted-foreground mb-2">
-              {t('server.emptyState.title', 'Server View')}
+      {/* Main Content Area - Vertical Layout */}
+      <main className="flex-1 flex flex-col gap-4 p-4 pt-0 overflow-hidden max-w-6xl mx-auto w-full">
+        {/* React Flow Canvas Section - Top Row */}
+        <section className="flex flex-col h-80">
+          <div className="flex items-center mb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+              {t('server.flowCanvas.title', 'Agent Architecture')}
             </h2>
-            <p className="text-sm text-slate-500 dark:text-muted-foreground">
-              {t('server.emptyState.description', 'This area will be populated with server information soon.')}
-            </p>
           </div>
-        </div>
+          <div className="flex-1 min-h-0">
+            <ReactFlowCanvas />
+          </div>
+        </section>
+
+        {/* Conversation Logs Section - Bottom Row */}
+        <section className="flex flex-col flex-1 min-h-0">
+          <div className="flex items-center mb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {t('server.logs.title', 'Conversation Logs')}
+            </h2>
+          </div>
+          <div className="flex-1 min-h-0 glass-chip rounded-xl overflow-hidden">
+            <div className="h-full overflow-y-auto scroll-smooth">
+              <ConversationLogs />
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

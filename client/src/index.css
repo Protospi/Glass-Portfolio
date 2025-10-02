@@ -199,3 +199,56 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* React Flow Edge Styles - Force visibility */
+.react-flow .react-flow__edge-path {
+  stroke-width: 4px !important;
+  stroke-opacity: 1 !important;
+  stroke: #3b82f6 !important;
+  fill: none !important;
+}
+
+.react-flow .react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+.react-flow .react-flow__arrowhead {
+  fill: #3b82f6 !important;
+  stroke: #3b82f6 !important;
+}
+
+.react-flow .react-flow__edge {
+  pointer-events: all !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Dark mode edge styles */
+.dark .react-flow .react-flow__edge-path {
+  stroke: #60a5fa !important;
+  stroke-opacity: 1 !important;
+}
+
+.dark .react-flow .react-flow__arrowhead {
+  fill: #60a5fa !important;
+  stroke: #60a5fa !important;
+}
+
+/* Make sure React Flow container doesn't hide edges */
+.react-flow__renderer {
+  overflow: visible !important;
+}
+
+.react-flow__edges {
+  z-index: 10 !important;
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

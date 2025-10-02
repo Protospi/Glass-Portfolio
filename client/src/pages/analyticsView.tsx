@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDropdown } from "@/components/chat/settings-dropdown";
+import { Metrics } from "@/components/analytics/metrics";
+import { CSATGauge } from "@/components/analytics/charts";
 
 export default function AnalyticsView() {
   const { t } = useTranslation();
@@ -39,19 +41,20 @@ export default function AnalyticsView() {
         <SettingsDropdown />
       </header>
 
-      {/* Main Content Area - Empty for now */}
-      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative overflow-hidden">
-        <div className="flex-1 flex items-center justify-center px-8">
-          <div className="text-center">
-            <div className="w-16 h-16 rounded-full glass-chip flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-6 h-6 text-blue-500" />
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative overflow-hidden p-6">
+        {/* Analytics Dashboard */}
+        <div className="w-[85%] mx-auto">
+          {/* Metrics and Gauge Row */}
+          <div className="grid grid-cols-5 gap-4">
+            <Metrics
+              users={1234}
+              conversations={567}
+              messages={8901}
+            />
+            <div className="col-span-2">
+              <CSATGauge value={85} />
             </div>
-            <h2 className="text-lg font-normal text-slate-600 dark:text-muted-foreground mb-2">
-              {t('analytics.emptyState.title', 'Analytics View')}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-muted-foreground">
-              {t('analytics.emptyState.description', 'This area will be populated with analytics information soon.')}
-            </p>
           </div>
         </div>
       </main>
