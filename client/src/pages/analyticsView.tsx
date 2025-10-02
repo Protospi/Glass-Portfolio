@@ -4,7 +4,7 @@ import { Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsDropdown } from "@/components/chat/settings-dropdown";
 import { Metrics } from "@/components/analytics/metrics";
-import { CSATGauge } from "@/components/analytics/charts";
+import { CSATGauge, TimeSeriesChart } from "@/components/analytics/charts";
 
 export default function AnalyticsView() {
   const { t } = useTranslation();
@@ -55,6 +55,11 @@ export default function AnalyticsView() {
             <div className="col-span-2">
               <CSATGauge value={85} />
             </div>
+          </div>
+          
+          {/* Time Series Chart */}
+          <div className="mt-6">
+            <TimeSeriesChart />
           </div>
         </div>
       </main>
