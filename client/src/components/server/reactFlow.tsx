@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import type { ComponentType } from 'react';
 import {
   ReactFlow,
@@ -11,9 +11,12 @@ import {
   Position,
   ConnectionLineType,
   Handle,
+  useReactFlow,
+  ReactFlowProvider,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { User, BotMessageSquare, Calendar, FileText, XCircle } from 'lucide-react';
+import { User, BotMessageSquare, Calendar, FileText, HeartPulse, Database, Bookmark } from 'lucide-react';
+import { useTheme } from '@/components/theme-provider';
 
 // Custom Node Component
 function CustomNode({ data }: { data: any }) {
@@ -21,6 +24,12 @@ function CustomNode({ data }: { data: any }) {
   const isAgent = data.type === 'agent';
   const isUser = data.type === 'user';
   const isTool = data.type === 'tool';
+  const { theme } = useTheme();
+  
+  // Use darker colors for light theme, lighter colors for dark theme
+  const userColor = theme === 'light' ? 'text-blue-700' : 'text-blue-400';
+  const agentColor = theme === 'light' ? 'text-purple-700' : 'text-purple-400';
+  const toolColor = theme === 'light' ? 'text-emerald-700' : 'text-emerald-400';
 
   return (
     <div 
@@ -61,10 +70,10 @@ function CustomNode({ data }: { data: any }) {
       >
         <Icon 
           className={`
-            w-7 h-7
-            ${isUser ? 'text-blue-400' : ''}
-            ${isAgent ? 'text-purple-400' : ''}
-            ${isTool ? 'text-emerald-400' : ''}
+            w-7 h-7 transition-colors duration-200
+            ${isUser ? userColor : ''}
+            ${isAgent ? agentColor : ''}
+            ${isTool ? toolColor : ''}
           `}
         />
       </div>
@@ -88,25 +97,36 @@ interface ReactFlowCanvasProps {
   }>;
 }
 
-export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
+// Inner component that uses useReactFlow for fitView control
+function FlowCanvas({ tools }: ReactFlowCanvasProps) {
   // Default tools from tools.json if not provided
   const defaultTools = [
     { name: '', icon: Calendar },
-    { name: '', icon: Calendar },
-    { name: '', icon: XCircle },
-    { name: '', icon: FileText },
+    { name: '', icon: Database },
+    { name: '', icon:  HeartPulse},
+    { name: '', icon: Bookmark },
   ];
 
   const toolsToDisplay = tools && tools.length > 0 ? tools : defaultTools;
+  const reactFlowInstance = useReactFlow();
 
-  // Create nodes
-  const initialNodes: Node[] = useMemo(() => {
+  // Create nodes with responsive positioning
+  const createNodes = useCallback(() => {
+    const isMobile = window.innerWidth < 768;
+    
+    // Adjust spacing based on screen size
+    const userX = isMobile ? 50 : 100;
+    const agentX = isMobile ? 220 : 400;
+    const toolX = isMobile ? 400 : 700;
+    const toolSpacing = 85;
+    const centerY = 150;
+
     const nodes: Node[] = [
       // User Node
       {
         id: 'user',
         type: 'custom',
-        position: { x: 100, y: 200 },
+        position: { x: userX, y: centerY },
         data: { 
           label: '', 
           icon: User, 
@@ -119,7 +139,7 @@ export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
       {
         id: 'agent',
         type: 'custom',
-        position: { x: 400, y: 200 },
+        position: { x: agentX, y: centerY },
         data: { 
           label: '', 
           icon: BotMessageSquare, 
@@ -132,15 +152,14 @@ export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
 
     // Tool Nodes - arranged vertically to the right of agent
     const toolCount = toolsToDisplay.length;
-    const startY = 200 - ((toolCount - 1) * 100) / 2; // Center tools vertically
-    const toolX = 700; // Fixed X position for all tools
+    const startY = centerY - ((toolCount - 1) * toolSpacing) / 2; // Center tools vertically
 
     toolsToDisplay.forEach((tool, index) => {
       const icon = tool.icon || FileText;
       nodes.push({
         id: `tool-${index}`,
         type: 'custom',
-        position: { x: toolX, y: startY + (index * 100) },
+        position: { x: toolX, y: startY + (index * toolSpacing) },
         data: { 
           label: tool.name,
           icon: tool.icon,
@@ -152,6 +171,9 @@ export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
 
     return nodes;
   }, [toolsToDisplay]);
+
+  // Create nodes
+  const initialNodes: Node[] = useMemo(() => createNodes(), [createNodes]);
 
   // Create edges
   const initialEdges: Edge[] = useMemo(() => {
@@ -190,41 +212,88 @@ export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
     return edges;
   }, [toolsToDisplay]);
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
+  // Handle window resize to reposition nodes and re-center
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      const padding = isMobile ? 0.3 : 0.2;
+      
+      // Recreate nodes with new positions based on screen size
+      const newNodes = createNodes();
+      setNodes(newNodes);
+      
+      // Use setTimeout to ensure ReactFlow has rendered with new positions
+      setTimeout(() => {
+        reactFlowInstance.fitView({ 
+          padding,
+          duration: 200,
+        });
+      }, 100);
+    };
+
+    // Initial fit
+    handleResize();
+
+    // Add resize listener with debounce
+    let resizeTimeout: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(handleResize, 150);
+    };
+
+    window.addEventListener('resize', debouncedResize);
+    
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimeout);
+    };
+  }, [reactFlowInstance, createNodes, setNodes]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      nodeTypes={nodeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.2, maxZoom: 1.2 }}
+      zoomOnScroll={false}
+      zoomOnPinch={false}
+      zoomOnDoubleClick={false}
+      minZoom={0.5}
+      maxZoom={1.5}
+      proOptions={{ hideAttribution: true }}
+      connectionLineType={ConnectionLineType.Straight}
+      defaultEdgeOptions={{
+        animated: true,
+        style: { 
+          strokeWidth: 4,
+          strokeOpacity: 1,
+        },
+        type: 'default',
+      }}
+    >
+      <Background 
+        variant={BackgroundVariant.Dots}
+        gap={20}
+        size={1}
+        className="opacity-20"
+      />
+    </ReactFlow>
+  );
+}
+
+// Main component wrapped with ReactFlowProvider
+export default function ReactFlowCanvas({ tools }: ReactFlowCanvasProps) {
   return (
     <div className="w-full h-full relative rounded-xl glass-chip" style={{ overflow: 'visible' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        zoomOnScroll={false}
-        zoomOnPinch={false}
-        zoomOnDoubleClick={false}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        proOptions={{ hideAttribution: true }}
-        connectionLineType={ConnectionLineType.Straight}
-        defaultEdgeOptions={{
-          animated: true,
-          style: { 
-            strokeWidth: 4,
-            strokeOpacity: 1,
-          },
-          type: 'default',
-        }}
-      >
-        <Background 
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          className="opacity-20"
-        />
-      </ReactFlow>
+      <ReactFlowProvider>
+        <FlowCanvas tools={tools} />
+      </ReactFlowProvider>
     </div>
   );
 }
