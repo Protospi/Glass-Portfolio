@@ -113,7 +113,7 @@ export class GoogleCalendarService {
       // Check if we have credentials
       const credentials = this.auth.credentials;
       if (!credentials.refresh_token) {
-        throw new Error('No refresh token available. Please complete OAuth setup first.');
+        throw new Error('No refresh token available. Please complete OAuth setup first by visiting: http://localhost:3009/api/auth/google');
       }
 
       // Check if access token is expired or about to expire
@@ -126,9 +126,34 @@ export class GoogleCalendarService {
         this.auth.setCredentials(newCredentials);
         console.log('✅ Access token refreshed successfully');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Token refresh failed:', error);
-      throw new Error(`Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please re-authorize your application.`);
+      
+      // Provide specific guidance for common errors
+      if (error.message?.includes('invalid_grant')) {
+        throw new Error(`
+🔴 TOKEN EXPIRED OR REVOKED!
+
+Your Google OAuth refresh token is no longer valid. This happens when:
+- Token hasn't been used for 6 months
+- Your OAuth app is in "Testing" mode (tokens expire after 7 days)
+- Google account password was changed
+- App access was revoked
+
+🔧 TO FIX:
+1. Visit: http://localhost:3009/api/auth/google
+2. Follow the authorization flow
+3. Copy the new refresh token to your .env file
+4. Restart the server
+
+💡 TO MAKE IT PERMANENT:
+- Publish your OAuth consent screen in Google Cloud Console
+- Set OAuth app to "Production" (not "Testing")
+- This prevents tokens from expiring
+        `);
+      }
+      
+      throw new Error(`Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please re-authorize your application at http://localhost:3009/api/auth/google`);
     }
   }
 

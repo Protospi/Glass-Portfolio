@@ -16,6 +16,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize engine instance
   const aiEngine = new engine();
 
+  // Helper function to get or create user by IP
+  async function getOrCreateUserByIP(ip: string): Promise<ObjectId> {
+    try {
+      // Try to find existing user by IP
+      const { Users } = await import('./database.js');
+      const existingUser = await Users.findOne({ ip });
+      
+      if (existingUser) {
+        console.log('👤 Found existing user:', existingUser._id);
+        return existingUser._id;
+      }
+      
+      // Create new user if not found
+      console.log('👤 Creating new user for IP:', ip);
+      const result = await db.createUser({ ip });
+      return result.insertedId;
+    } catch (error) {
+      console.error('Error getting/creating user:', error);
+      throw error;
+    }
+  }
+
   // Helper function to convert conversation history to engine format
   function convertHistoryToEngineFormat(messages: Array<{ content: string; isUser: boolean }>): any[] {
     const engineMessages: any[] = [];
@@ -183,6 +205,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isUser: false,
       });
       
+      // Mirror to MongoDB (don't block the response)
+      const userIP = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      getOrCreateUserByIP(userIP).then(userId => {
+        // Persist user's transcribed message
+        db.createMessage({
+          userId,
+          text: transcribedText.text,
+          author: 'user'
+        }).then(() => {
+          console.log('💾 Transcribed user message persisted to MongoDB');
+        }).catch(err => {
+          console.error('Error persisting transcribed message to MongoDB:', err);
+        });
+        
+        // Persist AI response
+        db.createMessage({
+          userId,
+          text: aiResponse,
+          author: 'assistant'
+        }).then(() => {
+          console.log('💾 AI response (audio) persisted to MongoDB');
+        }).catch(err => {
+          console.error('Error persisting AI response (audio) to MongoDB:', err);
+        });
+        
+        // Extract and persist function calls
+        const functionCalls = engineResult.filter((msg: any) => msg.type === 'function_call');
+        const functionOutputs = engineResult.filter((msg: any) => msg.type === 'function_call_output');
+        
+        if (functionCalls.length > 0) {
+          console.log('🔧 Persisting', functionCalls.length, 'function calls to MongoDB (audio)');
+          functionCalls.forEach((funcCall: any) => {
+            const output = functionOutputs.find((fo: any) => fo.call_id === funcCall.call_id);
+            db.createFunction({
+              userId,
+              args: {
+                name: funcCall.name,
+                call_id: funcCall.call_id,
+                arguments: JSON.parse(funcCall.arguments)
+              },
+              response: {
+                output: output?.output || null
+              }
+            }).then(() => {
+              console.log(`💾 Function call ${funcCall.name} persisted to MongoDB (audio)`);
+            }).catch(err => {
+              console.error(`Error persisting function call ${funcCall.name} (audio):`, err);
+            });
+          });
+        }
+      }).catch(err => {
+        console.error('Error getting user for persistence (audio):', err);
+      });
+      
       res.json({
         transcribedText: transcribedText.text,
         userMessage,
@@ -277,6 +353,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const messageData = insertMessageSchema.parse(req.body);
       const message = await storage.createMessage(messageData);
+      
+      // Mirror to MongoDB (don't block the response)
+      const userIP = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      getOrCreateUserByIP(userIP).then(userId => {
+        db.createMessage({
+          userId,
+          text: messageData.content,
+          author: messageData.isUser ? 'user' : 'assistant'
+        }).then(() => {
+          console.log('💾 Message persisted to MongoDB');
+        }).catch(err => {
+          console.error('Error persisting message to MongoDB:', err);
+        });
+      }).catch(err => {
+        console.error('Error getting user for message persistence:', err);
+      });
+      
       res.json(message);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -345,6 +438,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isUser: false,
       });
       console.log('🤖 AI response saved:', responseText.substring(0, 100) + '...');
+      
+      // Mirror AI response to MongoDB (don't block the response)
+      const userIP = req.ip || req.socket.remoteAddress || '127.0.0.1';
+      getOrCreateUserByIP(userIP).then(userId => {
+        db.createMessage({
+          userId,
+          text: responseText,
+          author: 'assistant'
+        }).then(() => {
+          console.log('💾 AI response persisted to MongoDB');
+        }).catch(err => {
+          console.error('Error persisting AI response to MongoDB:', err);
+        });
+        
+        // Extract and persist function calls
+        const functionCalls = engineResult.filter((msg: any) => msg.type === 'function_call');
+        const functionOutputs = engineResult.filter((msg: any) => msg.type === 'function_call_output');
+        
+        if (functionCalls.length > 0) {
+          console.log('🔧 Persisting', functionCalls.length, 'function calls to MongoDB');
+          functionCalls.forEach((funcCall: any, index: number) => {
+            const output = functionOutputs.find((fo: any) => fo.call_id === funcCall.call_id);
+            db.createFunction({
+              userId,
+              args: {
+                name: funcCall.name,
+                call_id: funcCall.call_id,
+                arguments: JSON.parse(funcCall.arguments)
+              },
+              response: {
+                output: output?.output || null
+              }
+            }).then(() => {
+              console.log(`💾 Function call ${funcCall.name} persisted to MongoDB`);
+            }).catch(err => {
+              console.error(`Error persisting function call ${funcCall.name}:`, err);
+            });
+          });
+        }
+      }).catch(err => {
+        console.error('Error getting user for persistence:', err);
+      });
       
       res.json(responseMessage);
     } catch (error) {

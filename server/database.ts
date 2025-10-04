@@ -49,6 +49,9 @@ const Users = db.collection<User>("users");
 const Messages = db.collection<Message>("messages");
 const Functions = db.collection<Function>("functions");
 
+// Export collections for direct access
+export { Users, Messages, Functions, client };
+
 // Connect to MongoDB
 export async function connectToDatabase() {
     try {
